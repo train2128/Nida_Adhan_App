@@ -1,0 +1,289 @@
+/* ============================================
+   Nida - Dark Theme
+   ============================================ */
+
+QWidget#mainContainer {
+    background-color: #1a1a2e;
+    border: 1px solid #16213e;
+    border-radius: 12px;
+}
+
+QLabel {
+    color: #e0e0e0;
+}
+
+QLabel#hijriDate {
+    font-size: 13px;
+    font-weight: bold;
+    color: #c9a84c;
+}
+
+QLabel#miladiDate {
+    font-size: 11px;
+    color: #8899aa;
+}
+
+QFrame#headerSep, QFrame#footerSep {
+    color: #2a3a5c;
+    background-color: #2a3a5c;
+    max-height: 1px;
+}
+
+QLabel#prayerName {
+    font-size: 13px;
+    font-weight: bold;
+    color: #e0e0e0;
+}
+
+QLabel#prayerTime {
+    font-size: 15px;
+    font-weight: bold;
+    color: #4fc3f7;
+}
+
+QPushButton#adhanToggle {
+    background: transparent;
+    border: none;
+    font-size: 16px;
+    padding: 2px;
+}
+
+QPushButton#adhanToggle:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+}
+
+QLabel#nextPrayer {
+    font-size: 11px;
+    color: #8899aa;
+}
+
+QPushButton#settingsBtn {
+    background: transparent;
+    border: 1px solid #3a4a6c;
+    border-radius: 6px;
+    font-size: 16px;
+    color: #e0e0e0;
+}
+
+QPushButton#settingsBtn:hover {
+    background-color: #2a3a5c;
+    border: 1px solid #4fc3f7;
+}
+
+/* Notification overlay */
+QWidget#adhanOverlay {
+    background-color: rgba(0, 0, 0, 0.85);
+    border-radius: 12px;
+}
+
+QLabel#overlayTitle {
+    font-size: 24px;
+    font-weight: bold;
+    color: #4fc3f7;
+}
+
+QLabel#overlayMsg {
+    font-size: 14px;
+    color: #c9a84c;
+}
+
+QPushButton#dismissBtn {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                              stop:0 #2a6bcb,
+                              stop:0.5 #1a5bbd,
+                              stop:1 #0f4aaf);
+    color: white;
+    border: none;
+    border-radius: 20px;
+    padding: 10px 30px;
+    font-size: 14px;
+    font-weight: bold;
+    min-width: 140px;
+}
+
+QPushButton#dismissBtn:hover {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                              stop:0 #3a7bdb,
+                              stop:0.5 #2a6bcb,
+                              stop:1 #1a5bbd);
+}
+
+QPushButton#dismissBtn:pressed {
+    background: #0f4aaf;
+    padding-top: 11px;
+    padding-bottom: 9px;
+}
+
+/* Settings dialog */
+QDialog {
+    background-color: #1a1a2e;
+    color: #e0e0e0;
+}
+
+QGroupBox {
+    color: #c9a84c;
+    font-weight: bold;
+    border: 1px solid #2a3a5c;
+    border-radius: 8px;
+    margin-top: 12px;
+    padding-top: 16px;
+    background-color: rgba(255, 255, 255, 0.02);
+}
+
+QGroupBox::title {
+    subcontrol-origin: margin;
+    subcontrol-position: top left;
+    padding: 0 6px;
+    left: 10px;
+}
+
+QLineEdit {
+    background-color: #16213e;
+    color: #e0e0e0;
+    border: 1px solid #2a3a5c;
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 13px;
+    selection-background-color: #4fc3f7;
+    selection-color: #1a1a2e;
+}
+
+QLineEdit:focus {
+    border: 1px solid #4fc3f7;
+}
+
+QComboBox {
+    background-color: #16213e;
+    color: #e0e0e0;
+    border: 1px solid #2a3a5c;
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 13px;
+}
+
+QComboBox::drop-down {
+    subcontrol-origin: padding;
+    subcontrol-position: top right;
+    width: 24px;
+    border-left: 1px solid #2a3a5c;
+}
+
+QComboBox::down-arrow {
+    width: 0;
+    height: 0;
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-top: 5px solid #8899aa;
+}
+
+QComboBox QAbstractItemView {
+    background-color: #16213e;
+    color: #e0e0e0;
+    border: 1px solid #2a3a5c;
+    selection-background-color: #2a6bcb;
+    selection-color: white;
+}
+
+QComboBox:focus {
+    border: 1px solid #4fc3f7;
+}
+
+QCheckBox {
+    color: #e0e0e0;
+    spacing: 8px;
+}
+
+QCheckBox::indicator {
+    width: 16px;
+    height: 16px;
+    border-radius: 3px;
+    border: 1px solid #2a3a5c;
+    background-color: #16213e;
+}
+
+QCheckBox::indicator:checked {
+    background-color: #2a6bcb;
+    border: 1px solid #2a6bcb;
+}
+
+QCheckBox::indicator:hover {
+    border: 1px solid #4fc3f7;
+}
+
+QListWidget {
+    background-color: #16213e;
+    color: #e0e0e0;
+    border: 1px solid #2a3a5c;
+    border-radius: 6px;
+    outline: none;
+}
+
+QListWidget::item {
+    padding: 6px 8px;
+    border-radius: 4px;
+}
+
+QListWidget::item:selected {
+    background-color: #2a6bcb;
+    color: white;
+}
+
+QListWidget::item:hover:!selected {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+QSlider::groove:horizontal {
+    height: 6px;
+    background: #16213e;
+    border-radius: 3px;
+}
+
+QSlider::handle:horizontal {
+    background: #4fc3f7;
+    width: 16px;
+    height: 16px;
+    margin: -5px 0;
+    border-radius: 8px;
+}
+
+QSlider::handle:horizontal:hover {
+    background: #6fd3ff;
+}
+
+QSlider::sub-page:horizontal {
+    background: #2a6bcb;
+    border-radius: 3px;
+}
+
+QPushButton#saveBtn {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                              stop:0 #2a6bcb,
+                              stop:1 #1a5bbd);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 24px;
+    font-weight: bold;
+    min-width: 80px;
+}
+
+QPushButton#saveBtn:hover {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                              stop:0 #3a7bdb,
+                              stop:1 #2a6bcb);
+}
+
+QPushButton#cancelBtn, QPushButton#browseSoundBtn {
+    background: #2a3a5c;
+    color: #e0e0e0;
+    border: 1px solid #3a4a6c;
+    border-radius: 6px;
+    padding: 8px 24px;
+    font-weight: bold;
+    min-width: 80px;
+}
+
+QPushButton#cancelBtn:hover, QPushButton#browseSoundBtn:hover {
+    background: #3a4a6c;
+}

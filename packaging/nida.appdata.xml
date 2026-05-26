@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.nida</id>
+  <name>Nida</name>
+  <name xml:lang="ar">نداء</name>
+  <summary>Prayer time notification and adhan player</summary>
+  <summary xml:lang="ar">تطبيق مواقيت الصلاة والأذان</summary>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>MIT</project_license>
+  <description>
+    <p>Nida (نداء) is a desktop prayer time application that sits in your system tray.</p>
+    <p>Features:</p>
+    <ul>
+      <li>Automatic prayer time calculation via aladhan.com API</li>
+      <li>Offline support with local cache</li>
+      <li>Adhan audio playback at prayer times</li>
+      <li>Automatic media pause/resume (MPRIS on Linux, Win32 on Windows)</li>
+      <li>Dark and Light themes</li>
+      <li>Multiple calculation methods (MWL, ISNA, Umm Al-Qura, etc.)</li>
+      <li>Per-prayer adhan toggle</li>
+    </ul>
+  </description>
+  <launchable type="desktop-id">nida.desktop</launchable>
+  <provides>
+    <binary>Nida</binary>
+  </provides>
+</component>

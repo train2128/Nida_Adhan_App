@@ -1,0 +1,16 @@
+QLabel { font-size: 13px; }
+QLabel#hijriDate { font-size: 13px; }
+QLabel#miladiDate { font-size: 11px; }
+QLabel#prayerName { font-size: 13px; }
+QLabel#prayerTime { font-size: 15px; }
+QLabel#nextPrayer { font-size: 11px; }
+QLabel#overlayTitle { font-size: 24px; }
+QLabel#overlayMsg { font-size: 14px; }
+QPushButton { font-size: 13px; padding: 8px 16px; }
+QPushButton#dismissBtn { font-size: 14px; padding: 10px 30px; }
+QPushButton#settingsBtn { font-size: 16px; }
+QLineEdit { font-size: 13px; padding: 6px 10px; }
+QComboBox { font-size: 13px; padding: 6px 10px; }
+QGroupBox { font-size: 13px; }
+QListWidget { font-size: 13px; }
+QListWidget::item { padding: 6px 8px; }

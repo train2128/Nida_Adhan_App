@@ -1,0 +1,20 @@
+<RCC>
+    <qresource prefix="/icons">
+        <file alias="icon_black">icons/icon_black.png</file>
+        <file alias="icon_white">icons/icon_white.png</file>
+        <file alias="icon_colored">icons/icon_colored.png</file>
+    </qresource>
+    <qresource prefix="/sounds">
+        <file alias="Abdul-Basit">sounds/Abdul-Basit.mp3</file>
+        <file alias="Adhan-Alaqsa">sounds/Adhan-Alaqsa.mp3</file>
+        <file alias="Adhan-Madinah">sounds/Adhan-Madinah.mp3</file>
+        <file alias="Adhan-Makkah">sounds/Adhan-Makkah.mp3</file>
+        <file alias="Naghshbandi">sounds/Naghshbandi.mp3</file>
+    </qresource>
+    <qresource prefix="/styles">
+        <file alias="nida_dark">styles/nida_dark.qss</file>
+        <file alias="nida_light">styles/nida_light.qss</file>
+        <file alias="nida_font_small">styles/nida_font_small.qss</file>
+        <file alias="nida_font_medium">styles/nida_font_medium.qss</file>
+    </qresource>
+</RCC>

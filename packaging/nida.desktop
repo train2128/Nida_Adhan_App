@@ -1,0 +1,14 @@
+[Desktop Entry]
+Type=Application
+Name=Nida
+Name[ar]=نداء
+GenericName=Prayer Time App
+GenericName[ar]=مواقيت الصلاة
+Comment=Prayer time notification and adhan player
+Comment[ar]=تطبيق مواقيت الصلاة والأذان
+Exec=Nida
+Icon=nida
+Categories=Utility;Qt;Education;Spirituality;
+Terminal=false
+StartupNotify=false
+X-GNOME-Autostart-enabled=false
