@@ -8,7 +8,6 @@
 #include <QLabel>
 #include <QPushButton>
 #include <QMouseEvent>
-#include <QFocusEvent>
 #include <QApplication>
 #include <QScreen>
 #include <QDebug>
@@ -111,31 +110,6 @@ void MainWidget::setupUi()
     root->addWidget(container);
 
     connect(m_settingsBtn, &QPushButton::clicked, this, &MainWidget::settingsRequested);
-
-    // Notification overlay (hidden by default)
-    m_overlay = new QWidget(this);
-    m_overlay->setObjectName("adhanOverlay");
-    m_overlay->setVisible(false);
-    auto *ol = new QVBoxLayout(m_overlay);
-    m_overlayTitle = new QLabel;
-    m_overlayTitle->setObjectName("overlayTitle");
-    m_overlayTitle->setAlignment(Qt::AlignCenter);
-    m_overlayMsg = new QLabel("وقت الصلاة حان | Prayer time is here");
-    m_overlayMsg->setObjectName("overlayMsg");
-    m_overlayMsg->setAlignment(Qt::AlignCenter);
-    m_dismissBtn = new QPushButton("أذن / Dismiss");
-    m_dismissBtn->setObjectName("dismissBtn");
-    m_dismissBtn->setCursor(Qt::PointingHandCursor);
-    ol->addStretch();
-    ol->addWidget(m_overlayTitle);
-    ol->addWidget(m_overlayMsg);
-    ol->addWidget(m_dismissBtn, 0, Qt::AlignCenter);
-    ol->addStretch();
-
-    connect(m_dismissBtn, &QPushButton::clicked, this, [this]() {
-        m_overlay->setVisible(false);
-        emit adhanDismissed();
-    });
 }
 
 void MainWidget::applyTheme()
@@ -173,16 +147,6 @@ void MainWidget::setTimeUntilNext(const QString &name, int seconds)
     m_nextPrayerLabel->setText(QString("Next: %1 in %2h %3m").arg(name).arg(h).arg(m));
 }
 
-void MainWidget::showAdhanNotification(const QString &prayerName)
-{
-    m_overlayTitle->setText(prayerName + " | " + (prayerName == "Fajr" ? "الفجر" :
-        prayerName == "Dhuhr" ? "الظهر" :
-        prayerName == "Asr" ? "العصر" :
-        prayerName == "Maghrib" ? "المغرب" : "العشاء"));
-    m_overlay->setVisible(true);
-    m_overlay->raise();
-}
-
 void MainWidget::mousePressEvent(QMouseEvent *event)
 {
     if (event->button() == Qt::LeftButton)
@@ -193,12 +157,6 @@ void MainWidget::mouseMoveEvent(QMouseEvent *event)
 {
     if (event->buttons() & Qt::LeftButton)
         move(event->globalPosition().toPoint() - m_dragPos);
-}
-
-void MainWidget::focusOutEvent(QFocusEvent *event)
-{
-    if (!m_overlay || !m_overlay->isVisible())
-        QWidget::focusOutEvent(event);
 }
 
 void MainWidget::changeEvent(QEvent *event)

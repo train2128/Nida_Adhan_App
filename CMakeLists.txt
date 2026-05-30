@@ -39,6 +39,7 @@ set(SOURCES
     src/ui/mainwidget.cpp
     src/ui/prayerwidget.cpp
     src/ui/settingsdialog.cpp
+    src/ui/adhannotificationwindow.cpp
 )
 
 set(HEADERS
@@ -55,6 +56,7 @@ set(HEADERS
     src/ui/mainwidget.h
     src/ui/prayerwidget.h
     src/ui/settingsdialog.h
+    src/ui/adhannotificationwindow.h
 )
 
 set(UI_FORMS

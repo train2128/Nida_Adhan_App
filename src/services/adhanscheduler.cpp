@@ -112,14 +112,20 @@ void AdhanScheduler::playAdhan()
 {
     m_media->suspendMedia();
 
-    QString path = QString("qrc:/sounds/%1").arg(m_adhanSound);
-    if (!m_adhanSound.startsWith("qrc"))
-        path = m_adhanSound;
+    QString path = m_adhanSound;
+    if (!m_adhanSound.startsWith("qrc:/") && !m_adhanSound.startsWith("/") && !m_adhanSound.startsWith("file://"))
+        path = QString("qrc:/sounds/%1").arg(m_adhanSound);
 
     m_player->setSource(QUrl(path));
     m_audio->setVolume(m_volume / 100.0f);
     m_player->play();
     m_adhanPlaying = true;
+}
+
+void AdhanScheduler::triggerTestAdhan()
+{
+    playAdhan();
+    emit adhanStarted("TEST");
 }
 
 void AdhanScheduler::onMediaStatusChanged(QMediaPlayer::MediaStatus status)

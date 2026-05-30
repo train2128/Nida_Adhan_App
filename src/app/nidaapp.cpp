@@ -6,6 +6,7 @@
 #include "adhanscheduler.h"
 #include "ui/mainwidget.h"
 #include "ui/settingsdialog.h"
+#include "ui/adhannotificationwindow.h"
 #include <QApplication>
 #include <QGuiApplication>
 #include <QSettings>
@@ -15,6 +16,9 @@
 #include <QScreen>
 #include <QCursor>
 #include <QDebug>
+#include <QFile>
+#include <QLocalServer>
+#include <QLocalSocket>
 
 NidaApp::NidaApp(QObject *parent)
     : QObject(parent)
@@ -25,6 +29,7 @@ NidaApp::~NidaApp()
 {
     delete m_widget;
     delete m_settings;
+    delete m_notificationWindow;
 }
 
 void NidaApp::initialize()
@@ -46,10 +51,10 @@ void NidaApp::initialize()
             this, &NidaApp::onShowWidget);
     connect(m_widget, &MainWidget::settingsRequested,
             this, &NidaApp::onSettingsRequested);
-    connect(m_widget, &MainWidget::adhanDismissed,
-            this, &NidaApp::onAdhanDismissed);
     connect(m_scheduler, &AdhanScheduler::adhanStarted,
             this, &NidaApp::onAdhanStarted);
+    connect(m_scheduler, &AdhanScheduler::prayerNotification,
+            this, &NidaApp::onPrayerNotification);
     connect(m_scheduler, &AdhanScheduler::nextPrayerChanged,
             this, &NidaApp::onPrayerTimesUpdated);
     connect(m_api, &ApiService::prayerTimesFetched,
@@ -74,6 +79,10 @@ void NidaApp::initialize()
 
     // Fetch fresh times
     refreshPrayerTimes();
+
+    // Set up IPC server for --notify command
+    setupIpcServer();
+    handleCommandLine();
 }
 
 void NidaApp::refreshPrayerTimes()
@@ -116,6 +125,71 @@ void NidaApp::setupAutoStart()
 #endif
 }
 
+void NidaApp::setupIpcServer()
+{
+    m_ipcServer = new QLocalServer(this);
+    // Remove stale socket if the previous instance crashed
+    QLocalServer::removeServer("nida-ipc");
+    if (!m_ipcServer->listen("nida-ipc")) {
+        qDebug() << "IPC server already running (another instance?)";
+        return;
+    }
+    connect(m_ipcServer, &QLocalServer::newConnection, this, [this]() {
+        QLocalSocket *client = m_ipcServer->nextPendingConnection();
+        if (!client) return;
+        client->waitForReadyRead(500);
+        QByteArray data = client->readAll();
+        client->deleteLater();
+
+        QString msg = QString::fromUtf8(data).trimmed();
+        if (msg == "notify") {
+            m_scheduler->triggerTestAdhan();
+        }
+    });
+}
+
+void NidaApp::handleCommandLine()
+{
+    QStringList args = QApplication::arguments();
+    int idx = args.indexOf("--notify");
+    if (idx < 0) return;
+
+    // Try to connect to running instance
+    QLocalSocket socket;
+    socket.connectToServer("nida-ipc");
+    if (socket.waitForConnected(500)) {
+        socket.write("notify");
+        socket.waitForBytesWritten(500);
+        socket.disconnectFromServer();
+    } else {
+        qWarning() << "Nida is not running. Start Nida first, then use --notify.";
+    }
+
+    // If we're the second instance, quit after sending
+    QApplication::quit();
+}
+
+void NidaApp::applyThemeToNotification()
+{
+    if (!m_notificationWindow) return;
+    NidaSettings s = m_storage->loadSettings();
+    QString theme = s.darkTheme ? "nida_dark" : "nida_light";
+    QFile f(QString(":/styles/%1").arg(theme));
+    if (f.open(QFile::ReadOnly))
+        m_notificationWindow->setStyleSheet(f.readAll());
+}
+
+void NidaApp::showNotificationWindow(const QString &prayerName)
+{
+    if (!m_notificationWindow) {
+        m_notificationWindow = new AdhanNotificationWindow;
+        connect(m_notificationWindow, &AdhanNotificationWindow::dismissed,
+                this, &NidaApp::onAdhanDismissed);
+    }
+    applyThemeToNotification();
+    m_notificationWindow->showForPrayer(prayerName);
+}
+
 void NidaApp::onShowWidget()
 {
     m_widget->setPrayerTimes(m_times);
@@ -156,16 +230,21 @@ void NidaApp::onSettingsRequested()
 void NidaApp::onAdhanStarted(const QString &prayerName)
 {
     m_tray->setActiveIcon(true);
-    m_widget->showAdhanNotification(prayerName);
-    if (!m_widget->isVisible()) {
-        onShowWidget();
-    }
+    showNotificationWindow(prayerName);
+}
+
+void NidaApp::onPrayerNotification(const QString &prayerName)
+{
+    // Silent notification (adhan toggle is off for this prayer)
+    showNotificationWindow(prayerName);
 }
 
 void NidaApp::onAdhanDismissed()
 {
     m_scheduler->dismissAdhan();
     m_tray->setActiveIcon(false);
+    if (m_notificationWindow)
+        m_notificationWindow->hide();
 }
 
 void NidaApp::onPrayerTimesUpdated(const QString &name, int secondsUntil)

@@ -71,36 +71,44 @@ QPushButton#settingsBtn:hover {
     border: 1px solid #1976d2;
 }
 
-QWidget#adhanOverlay {
-    background-color: rgba(255, 255, 255, 0.92);
-    border-radius: 12px;
+/* Notification window */
+QWidget#notificationContainer {
+    background-color: #faf8f5;
+    border: 2px solid #1976d2;
+    border-radius: 16px;
 }
 
-QLabel#overlayTitle {
-    font-size: 24px;
+QLabel#notificationPrayerName {
+    font-size: 22px;
     font-weight: bold;
     color: #1976d2;
 }
 
-QLabel#overlayMsg {
-    font-size: 14px;
+QLabel#notificationReminder {
+    font-size: 18px;
+    font-weight: bold;
     color: #b8860b;
 }
 
-QPushButton#dismissBtn {
+QLabel#notificationTime {
+    font-size: 14px;
+    color: #8a7a6a;
+}
+
+QPushButton#notificationCloseBtn {
     background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
                               stop:0 #1976d2,
                               stop:1 #1565c0);
     color: white;
     border: none;
     border-radius: 20px;
-    padding: 10px 30px;
-    font-size: 14px;
+    padding: 8px 28px;
+    font-size: 13px;
     font-weight: bold;
-    min-width: 140px;
+    min-width: 100px;
 }
 
-QPushButton#dismissBtn:hover {
+QPushButton#notificationCloseBtn:hover {
     background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
                               stop:0 #2196f3,
                               stop:1 #1976d2);

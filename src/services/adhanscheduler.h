@@ -26,6 +26,7 @@ public:
     int secondsUntilNextPrayer() const;
     QString nextPrayerName() const;
     QTime nextPrayerTime() const;
+    void triggerTestAdhan();
 
 signals:
     void nextPrayerChanged(const QString &name, int secondsUntil);

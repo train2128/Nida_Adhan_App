@@ -19,16 +19,13 @@ public:
 
     void setPrayerTimes(const DailyPrayerTimes &times);
     void setTimeUntilNext(const QString &name, int seconds);
-    void showAdhanNotification(const QString &prayerName);
 
 signals:
     void settingsRequested();
-    void adhanDismissed();
 
 protected:
     void mousePressEvent(QMouseEvent *event) override;
     void mouseMoveEvent(QMouseEvent *event) override;
-    void focusOutEvent(QFocusEvent *event) override;
     void changeEvent(QEvent *event) override;
 
 private:
@@ -50,12 +47,6 @@ private:
     QLabel *m_nextPrayerLabel;
     QPushButton *m_settingsBtn;
     QPoint m_dragPos;
-
-    // Notification overlay
-    QWidget *m_overlay;
-    QLabel *m_overlayTitle;
-    QLabel *m_overlayMsg;
-    QPushButton *m_dismissBtn;
 };
 
 #endif
