@@ -2,7 +2,7 @@
 #define WMMEDIACONTROL_H
 
 #include <QObject>
-
+#include <windows.h>
 class WmiMediaControl : public QObject
 {
     Q_OBJECT

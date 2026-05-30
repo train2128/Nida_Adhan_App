@@ -71,6 +71,8 @@ set(RESOURCES
 if(WIN32)
     list(APPEND SOURCES platform/windows/wmmediacontrol.cpp)
     list(APPEND HEADERS platform/windows/wmmediacontrol.h)
+    list(APPEND SOURCES resources/win/nida.rc)
+    set(CMAKE_RC_FLAGS "${CMAKE_RC_FLAGS} -I${CMAKE_CURRENT_SOURCE_DIR}/resources/win")
 elseif(UNIX)
     list(APPEND SOURCES platform/linux/mpriscontroller.cpp)
     list(APPEND HEADERS platform/linux/mpriscontroller.h)

@@ -49,6 +49,8 @@ void NidaApp::initialize()
     // Wire signals
     connect(m_tray, &SystemTray::showWidget,
             this, &NidaApp::onShowWidget);
+    connect(m_tray, &SystemTray::quitRequested,
+            qApp, &QApplication::quit);
     connect(m_widget, &MainWidget::settingsRequested,
             this, &NidaApp::onSettingsRequested);
     connect(m_scheduler, &AdhanScheduler::adhanStarted,
