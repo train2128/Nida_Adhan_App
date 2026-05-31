@@ -36,7 +36,7 @@
 
 ## Donate
 
-<!-- Add your PayPal, Ko-fi, or Buy Me a Coffee link here -->
+[!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://buymeacoffee.com/cheriff)
 
 ---
 
