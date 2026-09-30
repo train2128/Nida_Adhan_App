@@ -17,6 +17,8 @@
 #include <QCursor>
 #include <QDebug>
 #include <QFile>
+#include <QTimer>
+#include <QProcessEnvironment>
 #include <QLocalServer>
 #include <QLocalSocket>
 
@@ -27,6 +29,8 @@ NidaApp::NidaApp(QObject *parent)
 
 NidaApp::~NidaApp()
 {
+    // Children of `this` are deleted automatically; only delete
+    // parent-less top-level widgets.
     delete m_widget;
     delete m_settings;
     delete m_notificationWindow;
@@ -34,6 +38,16 @@ NidaApp::~NidaApp()
 
 void NidaApp::initialize()
 {
+    // Single-instance: if another Nida is already listening, forward our
+    // command to it and quit without creating any UI.
+    const QStringList args = QApplication::arguments();
+    const bool wantNotify = args.contains("--notify");
+    if (tryForwardToRunningInstance(wantNotify ? QStringLiteral("notify")
+                                               : QStringLiteral("show"))) {
+        QTimer::singleShot(0, qApp, &QApplication::quit);
+        return;
+    }
+
     m_storage = new StorageService(this);
     if (!m_storage->initialize())
         qWarning() << "Storage init failed";
@@ -73,28 +87,57 @@ void NidaApp::initialize()
     m_scheduler->setVolume(s.volume);
     m_scheduler->setAdhanSound(s.selectedAdhan);
 
-    // Try loading from cache first
-    if (m_storage->hasValidCache(s.city, s.country, s.method)) {
-        m_times = m_storage->loadPrayerTimes(s.city, s.country, s.method);
-        onPrayerTimesFetched(m_times);
+    // Try loading from cache first (validate: old 1.0.x caches may hold
+    // rows written by the buggy loader; isValid() filters those out).
+    // Coords locations use the coords-keyed cache so they work offline too.
+    if (s.hasCoords()) {
+        if (m_storage->hasValidCacheForCoords(s.latitude, s.longitude, s.method)) {
+            const DailyPrayerTimes cached = m_storage->loadPrayerTimesForCoords(
+                s.latitude, s.longitude, s.method);
+            if (cached.isValid())
+                onPrayerTimesFetched(cached);
+        }
+    } else if (m_storage->hasValidCache(s.city, s.country, s.method)) {
+        const DailyPrayerTimes cached =
+            m_storage->loadPrayerTimes(s.city, s.country, s.method);
+        if (cached.isValid())
+            onPrayerTimesFetched(cached);
     }
 
     // Fetch fresh times
     refreshPrayerTimes();
 
-    // Set up IPC server for --notify command
+    // Set up IPC server for --notify / single-instance forwarding.
     setupIpcServer();
-    handleCommandLine();
+
+    // Primary instance launched directly with --notify: play test adhan locally.
+    if (QApplication::arguments().contains("--notify"))
+        QTimer::singleShot(0, this, [this]() { m_scheduler->triggerTestAdhan(); });
 }
 
 void NidaApp::refreshPrayerTimes()
 {
     NidaSettings s = m_storage->loadSettings();
+    if (s.hasCoords()) {
+        if (m_storage->hasValidCacheForCoords(s.latitude, s.longitude, s.method)) {
+            DailyPrayerTimes cached = m_storage->loadPrayerTimesForCoords(
+                s.latitude, s.longitude, s.method);
+            if (cached.isValid()) {
+                m_scheduler->setPrayerTimes(cached);
+                m_widget->setPrayerTimes(cached);
+                m_scheduler->start();
+            }
+        }
+        m_api->fetchPrayerTimesByCoords(s.latitude, s.longitude, s.method);
+        return;
+    }
     if (m_storage->hasValidCache(s.city, s.country, s.method)) {
         DailyPrayerTimes cached = m_storage->loadPrayerTimes(s.city, s.country, s.method);
-        m_scheduler->setPrayerTimes(cached);
-        m_widget->setPrayerTimes(cached);
-        m_scheduler->start();
+        if (cached.isValid()) {
+            m_scheduler->setPrayerTimes(cached);
+            m_widget->setPrayerTimes(cached);
+            m_scheduler->start();
+        }
     }
     m_api->fetchPrayerTimes(s.city, s.country, s.method);
 }
@@ -102,13 +145,16 @@ void NidaApp::refreshPrayerTimes()
 void NidaApp::setupAutoStart()
 {
     NidaSettings s = m_storage->loadSettings();
-    if (!s.startupEnabled) return;
 
 #ifdef Q_OS_LINUX
     QString autostartDir = QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation)
                            + "/autostart";
+    const QString desktopFile = autostartDir + "/nida.desktop";
+    if (!s.startupEnabled) {
+        QFile::remove(desktopFile);
+        return;
+    }
     QDir().mkpath(autostartDir);
-    QString desktopFile = autostartDir + "/nida.desktop";
     QFile f(desktopFile);
     if (f.open(QFile::WriteOnly)) {
         f.write(QString("[Desktop Entry]\n"
@@ -118,57 +164,86 @@ void NidaApp::setupAutoStart()
                         "Icon=nida\n"
                         "Terminal=false\n"
                         "X-GNOME-Autostart-enabled=true\n"
-                        ).arg(QApplication::applicationFilePath()).toUtf8());
+                        ).arg(launchPath()).toUtf8());
     }
 #elif defined(Q_OS_WIN)
     QSettings settings("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Run",
                        QSettings::NativeFormat);
-    settings.setValue("Nida", QApplication::applicationFilePath());
+    if (s.startupEnabled)
+        settings.setValue("Nida", launchPath());
+    else
+        settings.remove("Nida");
 #endif
+}
+
+QString NidaApp::launchPath() const
+{
+#ifdef Q_OS_LINUX
+    // Inside an AppImage, applicationFilePath() is a /tmp/.mount_* path that
+    // changes every launch. Use $APPIMAGE (the downloaded file) instead.
+    const QString appImage = QProcessEnvironment::systemEnvironment().value("APPIMAGE");
+    if (!appImage.isEmpty())
+        return QStringLiteral("\"%1\"").arg(appImage);
+#endif
+    return QStringLiteral("\"%1\"").arg(QApplication::applicationFilePath());
+}
+
+bool NidaApp::tryForwardToRunningInstance(const QString &message)
+{
+    QLocalSocket socket;
+    socket.connectToServer("nida-ipc");
+    if (!socket.waitForConnected(400))
+        return false;
+    socket.write(message.toUtf8());
+    socket.waitForBytesWritten(400);
+    socket.disconnectFromServer();
+    return true;
 }
 
 void NidaApp::setupIpcServer()
 {
+    if (m_ipcServer)
+        return;
+    // Only remove a stale socket when nobody is listening on it.
+    {
+        QLocalSocket probe;
+        probe.connectToServer("nida-ipc");
+        if (probe.waitForConnected(300))
+            return; // live primary exists; initialize() already forwarded
+        QLocalServer::removeServer("nida-ipc");
+    }
     m_ipcServer = new QLocalServer(this);
-    // Remove stale socket if the previous instance crashed
-    QLocalServer::removeServer("nida-ipc");
     if (!m_ipcServer->listen("nida-ipc")) {
-        qDebug() << "IPC server already running (another instance?)";
+        qWarning() << "Could not start IPC server:" << m_ipcServer->errorString();
         return;
     }
     connect(m_ipcServer, &QLocalServer::newConnection, this, [this]() {
         QLocalSocket *client = m_ipcServer->nextPendingConnection();
         if (!client) return;
-        client->waitForReadyRead(500);
-        QByteArray data = client->readAll();
-        client->deleteLater();
-
-        QString msg = QString::fromUtf8(data).trimmed();
-        if (msg == "notify") {
-            m_scheduler->triggerTestAdhan();
-        }
+        connect(client, &QLocalSocket::readyRead, this, [this, client]() {
+            const QString msg = QString::fromUtf8(client->readAll()).trimmed();
+            if (msg == "notify" && m_scheduler) {
+                m_scheduler->triggerTestAdhan();
+            } else if (msg == "show") {
+                onShowWidget();
+            }
+            client->deleteLater();
+        });
+        // Fallback for clients that wrote before we connected the signal.
+        QTimer::singleShot(600, client, [client]() {
+            if (client->bytesAvailable() > 0)
+                client->readyRead();
+            else
+                client->deleteLater();
+        });
     });
 }
 
 void NidaApp::handleCommandLine()
 {
-    QStringList args = QApplication::arguments();
-    int idx = args.indexOf("--notify");
-    if (idx < 0) return;
-
-    // Try to connect to running instance
-    QLocalSocket socket;
-    socket.connectToServer("nida-ipc");
-    if (socket.waitForConnected(500)) {
-        socket.write("notify");
-        socket.waitForBytesWritten(500);
-        socket.disconnectFromServer();
-    } else {
-        qWarning() << "Nida is not running. Start Nida first, then use --notify.";
-    }
-
-    // If we're the second instance, quit after sending
-    QApplication::quit();
+    // Kept for compatibility: forwarding now happens at the top of
+    // initialize(). A primary instance launched with --notify plays a test
+    // adhan there instead of quitting.
 }
 
 void NidaApp::applyThemeToNotification()
@@ -194,6 +269,8 @@ void NidaApp::showNotificationWindow(const QString &prayerName)
 
 void NidaApp::onShowWidget()
 {
+    if (!m_widget)
+        return;
     m_widget->setPrayerTimes(m_times);
     m_widget->adjustSize();
 
@@ -231,7 +308,8 @@ void NidaApp::onSettingsRequested()
 
 void NidaApp::onAdhanStarted(const QString &prayerName)
 {
-    m_tray->setActiveIcon(true);
+    if (m_tray)
+        m_tray->setActiveIcon(true);
     showNotificationWindow(prayerName);
 }
 
@@ -243,14 +321,22 @@ void NidaApp::onPrayerNotification(const QString &prayerName)
 
 void NidaApp::onAdhanDismissed()
 {
-    m_scheduler->dismissAdhan();
-    m_tray->setActiveIcon(false);
+    if (m_scheduler)
+        m_scheduler->dismissAdhan();
+    if (m_tray)
+        m_tray->setActiveIcon(false);
     if (m_notificationWindow)
         m_notificationWindow->hide();
 }
 
 void NidaApp::onPrayerTimesUpdated(const QString &name, int secondsUntil)
 {
+    if (!m_tray || !m_widget)
+        return;
+    if (name.isEmpty() || secondsUntil <= 0) {
+        m_tray->setTooltip(QStringLiteral("Nida - Prayer Times"));
+        return;
+    }
     int h = secondsUntil / 3600;
     int m = (secondsUntil % 3600) / 60;
     QString tip = QString("Next: %1 in %2h %3m").arg(name).arg(h).arg(m);
@@ -260,12 +346,21 @@ void NidaApp::onPrayerTimesUpdated(const QString &name, int secondsUntil)
 
 void NidaApp::onPrayerTimesFetched(const DailyPrayerTimes &times)
 {
+    if (!times.isValid()) {
+        qWarning() << "Ignoring invalid prayer times";
+        return;
+    }
+    if (!m_scheduler || !m_widget || !m_storage)
+        return;
     m_times = times;
     m_scheduler->setPrayerTimes(times);
     m_widget->setPrayerTimes(times);
 
     NidaSettings s = m_storage->loadSettings();
-    m_storage->savePrayerTimes(s.city, s.country, s.method, times);
+    if (s.hasCoords())
+        m_storage->savePrayerTimesForCoords(s.latitude, s.longitude, s.method, times);
+    else
+        m_storage->savePrayerTimes(s.city, s.country, s.method, times);
 
     m_scheduler->start();
     onPrayerTimesUpdated(m_scheduler->nextPrayerName(),
@@ -275,13 +370,22 @@ void NidaApp::onPrayerTimesFetched(const DailyPrayerTimes &times)
 void NidaApp::onFetchError(const QString &error)
 {
     qWarning() << "API fetch error:" << error;
-    // Fall back to cache
+    // Fall back to cache only if we have nothing to show yet.
+    // Works offline: both coords and legacy caches are in local SQLite.
     NidaSettings s = m_storage->loadSettings();
     if (!m_scheduler->nextPrayerName().isEmpty()) return;
-    if (m_storage->hasValidCache(s.city, s.country, s.method)) {
-        m_times = m_storage->loadPrayerTimes(s.city, s.country, s.method);
-        onPrayerTimesFetched(m_times);
+    DailyPrayerTimes cached;
+    if (s.hasCoords()) {
+        if (!m_storage->hasValidCacheForCoords(s.latitude, s.longitude, s.method))
+            return;
+        cached = m_storage->loadPrayerTimesForCoords(s.latitude, s.longitude, s.method);
+    } else {
+        if (!m_storage->hasValidCache(s.city, s.country, s.method))
+            return;
+        cached = m_storage->loadPrayerTimes(s.city, s.country, s.method);
     }
+    if (cached.isValid())
+        onPrayerTimesFetched(cached);
 }
 
 void NidaApp::onSettingsChanged()

@@ -14,11 +14,17 @@ public:
 
     bool initialize();
 
-    // Prayer times cache
+    // Prayer times cache (legacy city/country key)
     bool hasValidCache(const QString &city, const QString &country, int method);
     DailyPrayerTimes loadPrayerTimes(const QString &city, const QString &country, int method);
     void savePrayerTimes(const QString &city, const QString &country, int method,
                          const DailyPrayerTimes &times);
+
+    // Prayer times cache (precise coords key, rounded to ~1km for stability)
+    bool hasValidCacheForCoords(double lat, double lon, int method);
+    DailyPrayerTimes loadPrayerTimesForCoords(double lat, double lon, int method);
+    void savePrayerTimesForCoords(double lat, double lon, int method,
+                                  const DailyPrayerTimes &times);
 
     // Settings
     NidaSettings loadSettings();

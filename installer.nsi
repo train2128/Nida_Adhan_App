@@ -1,7 +1,7 @@
 !define PRODUCT_NAME "Nida"
-!define PRODUCT_VERSION "1.0.1"
+!define PRODUCT_VERSION "1.1.0"
 !define PRODUCT_PUBLISHER "Nida"
-!define PRODUCT_WEB_SITE "https://github.com/nida"
+!define PRODUCT_WEB_SITE "https://github.com/train2128/Nida_Adhan_App"
 !define PRODUCT_DIR_REGKEY "Software\Microsoft\Windows\CurrentVersion\App Paths\Nida.exe"
 !define PRODUCT_UNINST_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}"
 !define PRODUCT_STARTUP_KEY "Software\Microsoft\Windows\CurrentVersion\Run"
@@ -22,7 +22,7 @@ SetCompressor lzma
 
 ; Pages
 !insertmacro MUI_PAGE_WELCOME
-!insertmacro MUI_PAGE_LICENSE "${DEPLOY_DIR}\..\Nida_Adhan_App\CMakeLists.txt"
+!insertmacro MUI_PAGE_LICENSE "${DEPLOY_DIR}\..\Nida_Adhan_App\LICENSE"
 !insertmacro MUI_PAGE_COMPONENTS
 !insertmacro MUI_PAGE_DIRECTORY
 !insertmacro MUI_PAGE_INSTFILES

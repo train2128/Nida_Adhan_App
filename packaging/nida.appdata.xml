@@ -1,12 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <component type="desktop-application">
-  <id>io.github.nida</id>
+  <id>io.github.train2128.Nida</id>
   <name>Nida</name>
   <name xml:lang="ar">نداء</name>
   <summary>Prayer time notification and adhan player</summary>
   <summary xml:lang="ar">تطبيق مواقيت الصلاة والأذان</summary>
   <metadata_license>CC0-1.0</metadata_license>
   <project_license>MIT</project_license>
+  <developer id="io.github.train2128">
+    <name>Nida Developers</name>
+  </developer>
+  <url type="homepage">https://github.com/train2128/Nida_Adhan_App</url>
   <description>
     <p>Nida (نداء) is a desktop prayer time application that sits in your system tray.</p>
     <p>Features:</p>
@@ -24,4 +28,12 @@
   <provides>
     <binary>Nida</binary>
   </provides>
+  <content_rating type="oars-1.1" />
+  <releases>
+    <release version="1.1.0" date="2026-09-30">
+      <description>
+        <p>Major stability update: fixed offline cache, single-instance IPC, autostart handling, media pause/resume, and reproducible AppImage builds on Ubuntu 22.04.</p>
+      </description>
+    </release>
+  </releases>
 </component>

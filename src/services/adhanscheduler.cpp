@@ -92,6 +92,8 @@ void AdhanScheduler::checkPrayerTimes()
 {
     QTime now = QTime::currentTime();
     auto check = [&](const PrayerTimeEntry &entry) {
+        if (entry.time.isNull() || !entry.time.isValid())
+            return;
         if (!m_adhanPlaying && now.hour() == entry.time.hour() && now.minute() == entry.time.minute()) {
             if (m_storage->isAdhanEnabled(entry.name)) {
                 playAdhan();
@@ -113,10 +115,17 @@ void AdhanScheduler::playAdhan()
     m_media->suspendMedia();
 
     QString path = m_adhanSound;
-    if (!m_adhanSound.startsWith("qrc:/") && !m_adhanSound.startsWith("/") && !m_adhanSound.startsWith("file://"))
+    if (!m_adhanSound.startsWith("qrc:/") && !m_adhanSound.startsWith(":/")
+        && !m_adhanSound.startsWith("/") && !m_adhanSound.startsWith("file://"))
         path = QString("qrc:/sounds/%1").arg(m_adhanSound);
 
-    m_player->setSource(QUrl(path));
+    QUrl source;
+    if (path.startsWith("file://") || path.startsWith("qrc:/") || path.startsWith(":/"))
+        source = QUrl(path);
+    else
+        source = QUrl::fromLocalFile(path);
+
+    m_player->setSource(source);
     m_audio->setVolume(m_volume / 100.0f);
     m_player->play();
     m_adhanPlaying = true;
@@ -132,5 +141,8 @@ void AdhanScheduler::onMediaStatusChanged(QMediaPlayer::MediaStatus status)
 {
     if (status == QMediaPlayer::EndOfMedia && m_adhanPlaying) {
         m_adhanPlaying = false;
+        // Audio finished on its own: resume what we paused and notify UI.
+        m_media->resumeMedia();
+        emit adhanFinished();
     }
 }

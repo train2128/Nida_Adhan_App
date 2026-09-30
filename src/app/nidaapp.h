@@ -41,14 +41,16 @@ private:
     void handleCommandLine();
     void applyThemeToNotification();
     void showNotificationWindow(const QString &prayerName);
+    QString launchPath() const;
+    bool tryForwardToRunningInstance(const QString &message);
 
-    SystemTray *m_tray;
-    MainWidget *m_widget;
-    SettingsDialog *m_settings;
-    StorageService *m_storage;
-    ApiService *m_api;
-    MediaService *m_media;
-    AdhanScheduler *m_scheduler;
+    SystemTray *m_tray = nullptr;
+    MainWidget *m_widget = nullptr;
+    SettingsDialog *m_settings = nullptr;
+    StorageService *m_storage = nullptr;
+    ApiService *m_api = nullptr;
+    MediaService *m_media = nullptr;
+    AdhanScheduler *m_scheduler = nullptr;
     AdhanNotificationWindow *m_notificationWindow = nullptr;
     QLocalServer *m_ipcServer = nullptr;
     DailyPrayerTimes m_times;

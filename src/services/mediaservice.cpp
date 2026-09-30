@@ -18,7 +18,7 @@ void MediaService::suspendMedia()
     m_suspended = true;
 
 #if defined(NIDA_OS_LINUX)
-    MprisController::pauseAll();
+    m_pausedPlayers = MprisController::pauseAll();
 #elif defined(NIDA_OS_WINDOWS)
     WmiMediaControl::pauseAll();
 #endif
@@ -32,7 +32,8 @@ void MediaService::resumeMedia()
     m_suspended = false;
 
 #if defined(NIDA_OS_LINUX)
-    MprisController::resumeAll();
+    MprisController::resumePlayers(m_pausedPlayers);
+    m_pausedPlayers.clear();
 #elif defined(NIDA_OS_WINDOWS)
     WmiMediaControl::resumeAll();
 #endif

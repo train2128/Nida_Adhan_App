@@ -1,5 +1,6 @@
 #include "wmmediacontrol.h"
 #include <QDebug>
+#include <QtGlobal>
 #include <windows.h>
 #include <mmdeviceapi.h>
 #include <endpointvolume.h>
@@ -25,7 +26,7 @@ void WmiMediaControl::muteSystem(bool mute)
     IAudioEndpointVolume *endpoint = nullptr;
 
     hr = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
-    if (FAILED(hr)) return;
+    if (FAILED(hr) && hr != RPC_E_CHANGED_MODE) return;
 
     hr = CoCreateInstance(__uuidof(MMDeviceEnumerator), nullptr,
                           CLSCTX_ALL, __uuidof(IMMDeviceEnumerator),
@@ -37,7 +38,9 @@ void WmiMediaControl::muteSystem(bool mute)
                                   nullptr, (void**)&endpoint);
             if (SUCCEEDED(hr)) {
                 if (mute) {
-                    endpoint->GetMasterVolumeLevelScalar((float*)&s_savedVolume);
+                    float level = 1.0f;
+                    endpoint->GetMasterVolumeLevelScalar(&level);
+                    s_savedVolume = qBound(0, qRound(level * 100.0f), 100);
                     endpoint->SetMute(TRUE, nullptr);
                 } else {
                     endpoint->SetMute(FALSE, nullptr);

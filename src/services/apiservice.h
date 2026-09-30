@@ -13,6 +13,7 @@ public:
     explicit ApiService(QObject *parent = nullptr);
 
     void fetchPrayerTimes(const QString &city, const QString &country, int method);
+    void fetchPrayerTimesByCoords(double latitude, double longitude, int method);
     bool isOnline() const;
 
 signals:
@@ -23,7 +24,7 @@ private slots:
     void onReplyFinished(QNetworkReply *reply);
 
 private:
-    DailyPrayerTimes parseTimings(const QByteArray &data);
+    bool parseTimings(const QByteArray &data, DailyPrayerTimes *out);
     QNetworkAccessManager *m_nam;
 };
 

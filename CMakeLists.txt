@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(Nida VERSION 1.0.0 LANGUAGES CXX)
+project(Nida VERSION 1.1.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -35,6 +35,7 @@ set(SOURCES
     src/services/storageservice.cpp
     src/services/mediaservice.cpp
     src/services/adhanscheduler.cpp
+    src/services/locationservice.cpp
 
     src/ui/mainwidget.cpp
     src/ui/prayerwidget.cpp
@@ -52,6 +53,7 @@ set(HEADERS
     src/services/storageservice.h
     src/services/mediaservice.h
     src/services/adhanscheduler.h
+    src/services/locationservice.h
 
     src/ui/mainwidget.h
     src/ui/prayerwidget.h
@@ -140,16 +142,15 @@ install(FILES "${CMAKE_SOURCE_DIR}/packaging/nida.desktop"
 
 install(FILES "${CMAKE_SOURCE_DIR}/packaging/nida.appdata.xml"
     DESTINATION "${CMAKE_INSTALL_DATADIR}/metainfo"
+    RENAME "io.github.train2128.Nida.metainfo.xml"
 )
 
 install(FILES "${CMAKE_SOURCE_DIR}/resources/icons/icon_colored.png"
     DESTINATION "${CMAKE_INSTALL_DATADIR}/icons/hicolor/256x256/apps/"
     RENAME "nida.png"
 )
-install(FILES "${CMAKE_SOURCE_DIR}/resources/icons/icon_colored.png"
-    DESTINATION "${CMAKE_INSTALL_DATADIR}/icons/hicolor/scalable/apps/"
-    RENAME "nida.svg"
-)
+# NOTE: no SVG source exists, so do not install a fake nida.svg.
+# For AppImage builds use: -DCMAKE_INSTALL_PREFIX=/usr and DESTDIR=AppDir.
 
 # Update icon cache on Linux (best-effort, may need root)
 if(UNIX AND NOT APPLE)
@@ -165,7 +166,7 @@ set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION}")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Prayer time notification and adhan player")
 set(CPACK_PACKAGE_VENDOR "Nida")
 set(CPACK_PACKAGE_CONTACT "nida@localhost")
-set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_SOURCE_DIR}/CMakeLists.txt")
+set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_SOURCE_DIR}/LICENSE")
 set(CPACK_SET_DESTDIR ON)
 
 # ── DEB ──

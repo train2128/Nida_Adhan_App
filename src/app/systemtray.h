@@ -11,6 +11,7 @@ class SystemTray : public QObject
     Q_OBJECT
 public:
     explicit SystemTray(QObject *parent = nullptr);
+    ~SystemTray() override;
     void setTooltip(const QString &tooltip);
     void setActiveIcon(bool active);
     void show();
@@ -26,11 +27,11 @@ private slots:
 private:
     void setupMenu();
 
-    QSystemTrayIcon *m_trayIcon;
-    QMenu *m_menu;
-    QAction *m_nextPrayerAction;
-    QAction *m_showAction;
-    QAction *m_quitAction;
+    QSystemTrayIcon *m_trayIcon = nullptr;
+    QMenu *m_menu = nullptr;
+    QAction *m_nextPrayerAction = nullptr;
+    QAction *m_showAction = nullptr;
+    QAction *m_quitAction = nullptr;
 };
 
 #endif

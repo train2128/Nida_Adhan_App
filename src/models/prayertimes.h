@@ -5,6 +5,8 @@
 #include <QTime>
 #include <QDate>
 #include <QVector>
+#include <QtGlobal>
+#include <qmath.h>
 
 struct PrayerTimeEntry {
     QString name;
@@ -28,6 +30,7 @@ struct DailyPrayerTimes {
     QVector<PrayerTimeEntry*> allPrayers();
     const PrayerTimeEntry* nextPrayer() const;
     int secondsUntilNext() const;
+    bool isValid() const;
 };
 
 struct NidaSettings {
@@ -39,6 +42,24 @@ struct NidaSettings {
     bool startupEnabled = true;
     bool darkTheme = true;
     QString language = "en";
+    // Precise location (Photon search / auto-detect). NaN = unset -> legacy
+    // city/country lookup is used instead.
+    double latitude = qQNaN();
+    double longitude = qQNaN();
+    QString locationLabel;
+
+    bool hasCoords() const {
+        return !qIsNaN(latitude) && !qIsNaN(longitude)
+            && latitude >= -90.0 && latitude <= 90.0
+            && longitude >= -180.0 && longitude <= 180.0;
+    }
+    QString displayLocation() const {
+        if (!locationLabel.isEmpty())
+            return locationLabel;
+        if (!city.isEmpty() && !country.isEmpty())
+            return city + ", " + country;
+        return city + country;
+    }
 };
 
 QString formatHijriDate(const QString &day, const QString &monthAr, const QString &year);

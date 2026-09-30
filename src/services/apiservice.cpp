@@ -4,6 +4,8 @@
 #include <QJsonArray>
 #include <QDebug>
 #include <QNetworkInformation>
+#include <QUrl>
+#include <QUrlQuery>
 
 ApiService::ApiService(QObject *parent)
     : QObject(parent)
@@ -16,22 +18,38 @@ ApiService::ApiService(QObject *parent)
 bool ApiService::isOnline() const
 {
     auto *info = QNetworkInformation::instance();
-    if (info && info->reachability() == QNetworkInformation::Reachability::Online)
-        return true;
-    return false;
+    if (!info)
+        return true; // No backend loaded: be optimistic, let the request fail gracefully.
+    return info->reachability() == QNetworkInformation::Reachability::Online;
 }
 
 void ApiService::fetchPrayerTimes(const QString &city, const QString &country, int method)
 {
-    QDate today = QDate::currentDate();
-    QString dateStr = today.toString("dd-MM-yyyy");
-    QString url = QString(
-        "https://api.aladhan.com/v1/timingsByCity?"
-        "city=%1&country=%2&method=%3&date=%4"
-    ).arg(city, country).arg(method).arg(dateStr);
+    QUrl url("https://api.aladhan.com/v1/timingsByCity");
+    QUrlQuery q;
+    q.addQueryItem("city", city.trimmed());
+    q.addQueryItem("country", country.trimmed());
+    q.addQueryItem("method", QString::number(method));
+    q.addQueryItem("date", QDate::currentDate().toString("dd-MM-yyyy"));
+    url.setQuery(q);
 
-    QNetworkRequest req{QUrl(url)};
-    req.setHeader(QNetworkRequest::UserAgentHeader, "Nida/1.0");
+    QNetworkRequest req{url};
+    req.setHeader(QNetworkRequest::UserAgentHeader, "Nida/1.1");
+    m_nam->get(req);
+}
+
+void ApiService::fetchPrayerTimesByCoords(double latitude, double longitude, int method)
+{
+    QUrl url(QString("https://api.aladhan.com/v1/timings/%1")
+                 .arg(QDate::currentDate().toString("dd-MM-yyyy")));
+    QUrlQuery q;
+    q.addQueryItem("latitude", QString::number(latitude, 'f', 6));
+    q.addQueryItem("longitude", QString::number(longitude, 'f', 6));
+    q.addQueryItem("method", QString::number(method));
+    url.setQuery(q);
+
+    QNetworkRequest req{url};
+    req.setHeader(QNetworkRequest::UserAgentHeader, "Nida/1.1");
     m_nam->get(req);
 }
 
@@ -42,22 +60,28 @@ void ApiService::onReplyFinished(QNetworkReply *reply)
         emit fetchError(reply->errorString());
         return;
     }
-    DailyPrayerTimes times = parseTimings(reply->readAll());
+    DailyPrayerTimes times;
+    if (!parseTimings(reply->readAll(), &times)) {
+        emit fetchError(QStringLiteral("Invalid prayer-times response"));
+        return;
+    }
     emit prayerTimesFetched(times);
 }
 
-DailyPrayerTimes ApiService::parseTimings(const QByteArray &data)
+bool ApiService::parseTimings(const QByteArray &data, DailyPrayerTimes *out)
 {
+    if (!out)
+        return false;
     DailyPrayerTimes times;
     QJsonDocument doc = QJsonDocument::fromJson(data);
     if (doc.isNull() || !doc.isObject()) {
         qWarning() << "Invalid JSON response";
-        return times;
+        return false;
     }
 
     QJsonObject root = doc.object();
     if (root.value("code").toInt() != 200)
-        return times;
+        return false;
 
     QJsonObject dataObj = root.value("data").toObject();
     QJsonObject timings = dataObj.value("timings").toObject();
@@ -91,6 +115,12 @@ DailyPrayerTimes ApiService::parseTimings(const QByteArray &data)
     times.isha.name = "Isha"; times.isha.nameAr = "العشاء";
     times.isha.time = toTime(timings.value("Isha").toString());
 
+    if (!times.isValid()) {
+        qWarning() << "Parsed prayer times are incomplete";
+        return false;
+    }
+
     qDebug() << "Parsed prayer times:" << times.fajr.time << times.dhuhr.time << times.maghrib.time;
-    return times;
+    *out = times;
+    return true;
 }

@@ -6,6 +6,7 @@
 #include <QDebug>
 #include <QDateTime>
 #include <QTime>
+#include <qmath.h>
 
 StorageService::StorageService(QObject *parent)
     : QObject(parent)
@@ -50,6 +51,22 @@ void StorageService::createTables()
         "  fajr TEXT, sunrise TEXT, dhuhr TEXT, asr TEXT, maghrib TEXT, isha TEXT,"
         "  fetched_at TEXT NOT NULL,"
         "  UNIQUE(date, city, country, method)"
+        ")"
+    );
+    // Coords-keyed cache for precise Photon/IP locations. lat_key/lon_key are
+    // rounded to 2 decimals (~1km) so tiny GPS/IP jitter still hits the cache.
+    query.exec(
+        "CREATE TABLE IF NOT EXISTS prayer_cache_coords ("
+        "  id INTEGER PRIMARY KEY AUTOINCREMENT,"
+        "  date TEXT NOT NULL,"
+        "  lat_key TEXT NOT NULL,"
+        "  lon_key TEXT NOT NULL,"
+        "  method INTEGER NOT NULL,"
+        "  label TEXT,"
+        "  hijri_day TEXT, hijri_month_ar TEXT, hijri_year TEXT,"
+        "  fajr TEXT, sunrise TEXT, dhuhr TEXT, asr TEXT, maghrib TEXT, isha TEXT,"
+        "  fetched_at TEXT NOT NULL,"
+        "  UNIQUE(date, lat_key, lon_key, method)"
         ")"
     );
     query.exec(
@@ -121,17 +138,6 @@ DailyPrayerTimes StorageService::loadPrayerTimes(const QString &city, const QStr
         times.maghrib.time = QTime::fromString(query.value(7).toString(), "HH:mm");
         times.isha.name = "Isha"; times.isha.nameAr = "العشاء";
         times.isha.time = QTime::fromString(query.value(8).toString(), "HH:mm");
-        times.fajr.time = QTime::fromString(query.value(1).toString(), "HH:mm");
-        times.sunrise.name = "Sunrise"; times.sunrise.nameAr = "الشروق";
-        times.sunrise.time = QTime::fromString(query.value(2).toString(), "HH:mm");
-        times.dhuhr.name = "Dhuhr"; times.dhuhr.nameAr = "الظهر";
-        times.dhuhr.time = QTime::fromString(query.value(3).toString(), "HH:mm");
-        times.asr.name = "Asr"; times.asr.nameAr = "العصر";
-        times.asr.time = QTime::fromString(query.value(4).toString(), "HH:mm");
-        times.maghrib.name = "Maghrib"; times.maghrib.nameAr = "المغرب";
-        times.maghrib.time = QTime::fromString(query.value(5).toString(), "HH:mm");
-        times.isha.name = "Isha"; times.isha.nameAr = "العشاء";
-        times.isha.time = QTime::fromString(query.value(6).toString(), "HH:mm");
     }
     return times;
 }
@@ -163,6 +169,88 @@ void StorageService::savePrayerTimes(const QString &city, const QString &country
         qWarning() << "Failed to save prayer times:" << query.lastError().text();
 }
 
+namespace {
+QString coordKey(double v)
+{
+    return QString::number(qRound(v * 100.0) / 100.0, 'f', 2);
+}
+}
+
+bool StorageService::hasValidCacheForCoords(double lat, double lon, int method)
+{
+    QSqlQuery query(m_db);
+    query.prepare("SELECT fetched_at FROM prayer_cache_coords "
+                  "WHERE date = :date AND lat_key = :lat AND lon_key = :lon AND method = :method");
+    query.bindValue(":date", QDate::currentDate().toString("yyyy-MM-dd"));
+    query.bindValue(":lat", coordKey(lat));
+    query.bindValue(":lon", coordKey(lon));
+    query.bindValue(":method", method);
+    if (query.exec() && query.next()) {
+        QDateTime fetched = QDateTime::fromString(query.value(0).toString(), Qt::ISODate);
+        return fetched.isValid() && fetched.secsTo(QDateTime::currentDateTime()) < 86400;
+    }
+    return false;
+}
+
+DailyPrayerTimes StorageService::loadPrayerTimesForCoords(double lat, double lon, int method)
+{
+    DailyPrayerTimes times;
+    QSqlQuery query(m_db);
+    query.prepare("SELECT hijri_day, hijri_month_ar, hijri_year, fajr, sunrise, dhuhr, asr, maghrib, isha "
+                  "FROM prayer_cache_coords WHERE date = :date AND lat_key = :lat "
+                  "AND lon_key = :lon AND method = :method");
+    query.bindValue(":date", QDate::currentDate().toString("yyyy-MM-dd"));
+    query.bindValue(":lat", coordKey(lat));
+    query.bindValue(":lon", coordKey(lon));
+    query.bindValue(":method", method);
+    if (query.exec() && query.next()) {
+        times.miladiDate = QDate::currentDate();
+        times.hijriDay = query.value(0).toString();
+        times.hijriMonthAr = query.value(1).toString();
+        times.hijriYear = query.value(2).toString();
+        times.fajr.name = "Fajr"; times.fajr.nameAr = "الفجر";
+        times.fajr.time = QTime::fromString(query.value(3).toString(), "HH:mm");
+        times.sunrise.name = "Sunrise"; times.sunrise.nameAr = "الشروق";
+        times.sunrise.time = QTime::fromString(query.value(4).toString(), "HH:mm");
+        times.dhuhr.name = "Dhuhr"; times.dhuhr.nameAr = "الظهر";
+        times.dhuhr.time = QTime::fromString(query.value(5).toString(), "HH:mm");
+        times.asr.name = "Asr"; times.asr.nameAr = "العصر";
+        times.asr.time = QTime::fromString(query.value(6).toString(), "HH:mm");
+        times.maghrib.name = "Maghrib"; times.maghrib.nameAr = "المغرب";
+        times.maghrib.time = QTime::fromString(query.value(7).toString(), "HH:mm");
+        times.isha.name = "Isha"; times.isha.nameAr = "العشاء";
+        times.isha.time = QTime::fromString(query.value(8).toString(), "HH:mm");
+    }
+    return times;
+}
+
+void StorageService::savePrayerTimesForCoords(double lat, double lon, int method,
+                                              const DailyPrayerTimes &times)
+{
+    QSqlQuery query(m_db);
+    query.prepare("INSERT OR REPLACE INTO prayer_cache_coords "
+                  "(date, lat_key, lon_key, method, hijri_day, hijri_month_ar, hijri_year, "
+                  "fajr, sunrise, dhuhr, asr, maghrib, isha, fetched_at) "
+                  "VALUES (:date, :lat, :lon, :method, :hday, :hmonth, :hyear, "
+                  ":fajr, :sunrise, :dhuhr, :asr, :maghrib, :isha, :now)");
+    query.bindValue(":date", times.miladiDate.toString("yyyy-MM-dd"));
+    query.bindValue(":lat", coordKey(lat));
+    query.bindValue(":lon", coordKey(lon));
+    query.bindValue(":method", method);
+    query.bindValue(":hday", times.hijriDay);
+    query.bindValue(":hmonth", times.hijriMonthAr);
+    query.bindValue(":hyear", times.hijriYear);
+    query.bindValue(":fajr", times.fajr.time.toString("HH:mm"));
+    query.bindValue(":sunrise", times.sunrise.time.toString("HH:mm"));
+    query.bindValue(":dhuhr", times.dhuhr.time.toString("HH:mm"));
+    query.bindValue(":asr", times.asr.time.toString("HH:mm"));
+    query.bindValue(":maghrib", times.maghrib.time.toString("HH:mm"));
+    query.bindValue(":isha", times.isha.time.toString("HH:mm"));
+    query.bindValue(":now", QDateTime::currentDateTime().toString(Qt::ISODate));
+    if (!query.exec())
+        qWarning() << "Failed to save coords prayer times:" << query.lastError().text();
+}
+
 NidaSettings StorageService::loadSettings()
 {
     NidaSettings s;
@@ -179,6 +267,9 @@ NidaSettings StorageService::loadSettings()
         else if (key == "startup_enabled") s.startupEnabled = (val == "true");
         else if (key == "dark_theme") s.darkTheme = (val == "true");
         else if (key == "language") s.language = val;
+        else if (key == "latitude") s.latitude = val.isEmpty() ? qQNaN() : val.toDouble();
+        else if (key == "longitude") s.longitude = val.isEmpty() ? qQNaN() : val.toDouble();
+        else if (key == "location_label") s.locationLabel = val;
     }
     return s;
 }
@@ -200,6 +291,12 @@ void StorageService::saveSettings(const NidaSettings &settings)
     set("startup_enabled", settings.startupEnabled ? "true" : "false");
     set("dark_theme", settings.darkTheme ? "true" : "false");
     set("language", settings.language);
+    // NaN serializes as empty -> hasCoords() stays false after reload.
+    set("latitude", qIsNaN(settings.latitude) ? QString()
+                                              : QString::number(settings.latitude, 'f', 6));
+    set("longitude", qIsNaN(settings.longitude) ? QString()
+                                                : QString::number(settings.longitude, 'f', 6));
+    set("location_label", settings.locationLabel);
 }
 
 bool StorageService::isAdhanEnabled(const QString &prayerName)

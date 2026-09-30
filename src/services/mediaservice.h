@@ -2,6 +2,7 @@
 #define MEDIASERVICE_H
 
 #include <QObject>
+#include <QStringList>
 
 class MediaService : public QObject
 {
@@ -16,6 +17,7 @@ private:
     bool m_wasMuted = false;
     int m_previousVolume = 100;
     bool m_suspended = false;
+    QStringList m_pausedPlayers;
 };
 
 #endif

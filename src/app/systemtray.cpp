@@ -5,7 +5,7 @@
 SystemTray::SystemTray(QObject *parent)
     : QObject(parent)
     , m_trayIcon(new QSystemTrayIcon(this))
-    , m_menu(new QMenu)
+    , m_menu(new QMenu(nullptr))
 {
     m_trayIcon->setIcon(QIcon(":/icons/icon_colored"));
     m_trayIcon->setToolTip("Nida - Prayer Times");
@@ -17,6 +17,11 @@ SystemTray::SystemTray(QObject *parent)
             this, &SystemTray::onIconActivated);
     connect(m_showAction, &QAction::triggered, this, &SystemTray::showWidget);
     connect(m_quitAction, &QAction::triggered, this, &SystemTray::quitRequested);
+}
+
+SystemTray::~SystemTray()
+{
+    delete m_menu;
 }
 
 void SystemTray::setupMenu()

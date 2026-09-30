@@ -4,25 +4,29 @@
 #include <QHBoxLayout>
 #include <QFormLayout>
 #include <QComboBox>
-#include <QCompleter>
 #include <QCheckBox>
 #include <QSlider>
 #include <QListWidget>
 #include <QPushButton>
+#include <QLineEdit>
 #include <QLabel>
 #include <QGroupBox>
 #include <QFileDialog>
 #include <QDir>
 #include <QFileInfo>
+#include <QTimer>
 #include <QUrl>
+#include <QtGlobal>
 #include <QDebug>
 
 SettingsDialog::SettingsDialog(StorageService *storage, QWidget *parent)
     : QDialog(parent)
     , m_storage(storage)
+    , m_location(new LocationService(this))
     , m_player(new QMediaPlayer(this))
     , m_audio(new QAudioOutput(this))
 {
+    qRegisterMetaType<QList<LocationResult>>("QList<LocationResult>");
     m_player->setAudioOutput(m_audio);
     setWindowTitle("Nida Settings");
     setMinimumWidth(420);
@@ -30,6 +34,15 @@ SettingsDialog::SettingsDialog(StorageService *storage, QWidget *parent)
     loadSettings();
     populateMethods();
     populateSounds();
+
+    connect(m_location, &LocationService::searchFinished,
+            this, &SettingsDialog::onSearchFinished);
+    connect(m_location, &LocationService::searchError,
+            this, &SettingsDialog::onSearchError);
+    connect(m_location, &LocationService::detectFinished,
+            this, &SettingsDialog::onDetectFinished);
+    connect(m_location, &LocationService::detectError,
+            this, &SettingsDialog::onDetectError);
 }
 
 SettingsDialog::~SettingsDialog()
@@ -41,22 +54,43 @@ void SettingsDialog::setupUi()
 {
     auto *root = new QVBoxLayout(this);
 
-    // Location (single searchable combo)
-    auto *locGroup = new QGroupBox("Location (City / Country)");
+    // Location: online Photon search + auto-detect, saved offline in SQLite.
+    auto *locGroup = new QGroupBox("Location");
     auto *locLayout = new QVBoxLayout(locGroup);
-    m_locationCombo = new QComboBox;
-    m_locationCombo->setEditable(true);
-    m_locationCombo->setInsertPolicy(QComboBox::NoInsert);
-    m_locationCombo->setPlaceholderText("Type city or country name...");
-    m_locationCombo->setMinimumWidth(280);
+    m_savedLabel = new QLabel;
+    m_savedLabel->setWordWrap(true);
+    m_savedLabel->setObjectName("savedLocation");
+    locLayout->addWidget(m_savedLabel);
 
-    auto *completer = new QCompleter(this);
-    completer->setCaseSensitivity(Qt::CaseInsensitive);
-    completer->setFilterMode(Qt::MatchContains);
-    m_locationCombo->setCompleter(completer);
+    m_searchEdit = new QLineEdit;
+    m_searchEdit->setPlaceholderText("Search any city... (e.g. Sousse)");
+    m_searchEdit->setClearButtonEnabled(true);
+    locLayout->addWidget(m_searchEdit);
 
-    locLayout->addWidget(m_locationCombo);
+    m_resultsList = new QListWidget;
+    m_resultsList->setMaximumHeight(110);
+    locLayout->addWidget(m_resultsList);
+
+    auto *locBtnRow = new QHBoxLayout;
+    m_detectBtn = new QPushButton("Detect my location");
+    m_detectBtn->setToolTip("IP-based lookup (ipapi.co, fallback ip-api.com); needs internet once, then saved offline");
+    m_detectBtn->setCursor(Qt::PointingHandCursor);
+    m_searchStatus = new QLabel;
+    m_searchStatus->setWordWrap(true);
+    locBtnRow->addWidget(m_detectBtn);
+    locBtnRow->addWidget(m_searchStatus, 1);
+    locLayout->addLayout(locBtnRow);
     root->addWidget(locGroup);
+
+    m_searchTimer = new QTimer(this);
+    m_searchTimer->setSingleShot(true);
+    m_searchTimer->setInterval(350);
+    connect(m_searchEdit, &QLineEdit::textChanged,
+            this, &SettingsDialog::onSearchTextChanged);
+    connect(m_searchTimer, &QTimer::timeout, this, &SettingsDialog::onSearchTimeout);
+    connect(m_resultsList, &QListWidget::itemClicked,
+            this, &SettingsDialog::onResultSelected);
+    connect(m_detectBtn, &QPushButton::clicked, this, &SettingsDialog::onDetectClicked);
 
     // Calculation Method
     auto *methodGroup = new QGroupBox("Calculation Method");
@@ -137,80 +171,114 @@ void SettingsDialog::setupUi()
 void SettingsDialog::loadSettings()
 {
     m_settings = m_storage->loadSettings();
-    populateLocations();
+    m_hasPending = false;
+    m_searchResults.clear();
+    m_resultsList->clear();
+    m_searchEdit->clear();
+    m_searchStatus->clear();
+    m_detectBtn->setEnabled(true);
+    updateSavedLabel();
     m_volumeSlider->setValue(m_settings.volume);
     m_startupCheck->setChecked(m_settings.startupEnabled);
     m_darkThemeCheck->setChecked(m_settings.darkTheme);
     m_langCombo->setCurrentIndex(m_langCombo->findData(m_settings.language));
 }
 
-void SettingsDialog::populateLocations()
+void SettingsDialog::updateSavedLabel()
 {
-    m_locationCombo->clear();
-    QStringList locations = {
-        "Mecca, Saudi Arabia", "Medina, Saudi Arabia", "Riyadh, Saudi Arabia",
-        "Jeddah, Saudi Arabia", "Dammam, Saudi Arabia", "Tabuk, Saudi Arabia",
-        "Cairo, Egypt", "Alexandria, Egypt", "Luxor, Egypt",
-        "Casablanca, Morocco", "Rabat, Morocco", "Marrakech, Morocco",
-        "Algiers, Algeria", "Oran, Algeria", "Constantine, Algeria",
-        "Tunis, Tunisia", "Sfax, Tunisia",
-        "Tripoli, Libya", "Benghazi, Libya",
-        "Khartoum, Sudan", "Omdurman, Sudan",
-        "Baghdad, Iraq", "Basra, Iraq", "Mosul, Iraq",
-        "Damascus, Syria", "Aleppo, Syria",
-        "Amman, Jordan", "Zarqa, Jordan",
-        "Beirut, Lebanon", "Tripoli, Lebanon",
-        "Jerusalem, Palestine", "Gaza, Palestine", "Ramallah, Palestine",
-        "Kuwait City, Kuwait",
-        "Doha, Qatar",
-        "Manama, Bahrain",
-        "Muscat, Oman", "Salalah, Oman",
-        "Abu Dhabi, UAE", "Dubai, UAE", "Sharjah, UAE", "Ajman, UAE",
-        "Sana'a, Yemen", "Aden, Yemen",
-        "Riyadh, Saudi Arabia",
-        "Tehran, Iran", "Mashhad, Iran", "Isfahan, Iran", "Shiraz, Iran",
-        "Ankara, Turkey", "Istanbul, Turkey", "Izmir, Turkey", "Bursa, Turkey",
-        "Kuala Lumpur, Malaysia", "Penang, Malaysia", "Johor Bahru, Malaysia",
-        "Jakarta, Indonesia", "Surabaya, Indonesia", "Bandung, Indonesia", "Medan, Indonesia",
-        "Islamabad, Pakistan", "Karachi, Pakistan", "Lahore, Pakistan",
-        "Dhaka, Bangladesh", "Chittagong, Bangladesh",
-        "Kabul, Afghanistan", "Herat, Afghanistan",
-        "Mogadishu, Somalia",
-        "Djibouti City, Djibouti",
-        "Nouakchott, Mauritania",
-        "Dakar, Senegal",
-        "Bamako, Mali",
-        "Niamey, Niger",
-        "N'Djamena, Chad",
-        "Mumbai, India", "Delhi, India", "Hyderabad, India",
-        "Colombo, Sri Lanka",
-        "Beijing, China", "Shanghai, China", "Guangzhou, China",
-        "Moscow, Russia", "Kazan, Russia",
-        "London, United Kingdom", "Birmingham, United Kingdom",
-        "Paris, France", "Marseille, France",
-        "Berlin, Germany", "Munich, Germany",
-        "New York, United States", "Chicago, United States",
-        "Los Angeles, United States", "Houston, United States",
-        "Toronto, Canada", "Montreal, Canada",
-        "Sydney, Australia", "Melbourne, Australia"
-    };
-
-    for (const auto &loc : locations) {
-        m_locationCombo->addItem(loc);
+    QString loc = m_settings.displayLocation();
+    if (m_settings.hasCoords()) {
+        m_savedLabel->setText(QString("Saved: %1 (%2, %3)")
+            .arg(loc)
+            .arg(m_settings.latitude, 0, 'f', 4)
+            .arg(m_settings.longitude, 0, 'f', 4));
+    } else {
+        m_savedLabel->setText(QString("Saved: %1").arg(loc));
     }
+}
 
-    // Set current selection
-    QString current = m_settings.city + ", " + m_settings.country;
-    int idx = m_locationCombo->findText(current, Qt::MatchFixedString);
-    if (idx >= 0)
-        m_locationCombo->setCurrentIndex(idx);
-    else
-        m_locationCombo->setCurrentText(current);
+void SettingsDialog::onSearchTextChanged(const QString &text)
+{
+    m_searchTimer->stop();
+    if (text.trimmed().length() < 2) {
+        m_resultsList->clear();
+        m_searchResults.clear();
+        m_searchStatus->clear();
+        return;
+    }
+    m_searchStatus->setText("Searching...");
+    m_searchTimer->start();
+}
 
-    // Connect completer
-    auto *completer = m_locationCombo->completer();
-    if (completer)
-        completer->setModel(m_locationCombo->model());
+void SettingsDialog::onSearchTimeout()
+{
+    const QString text = m_searchEdit->text();
+    if (text.trimmed().length() < 2)
+        return;
+    m_location->searchLocations(text, m_settings.language);
+}
+
+void SettingsDialog::onSearchFinished(const QList<LocationResult> &results)
+{
+    m_searchResults = results;
+    m_resultsList->clear();
+    if (results.isEmpty()) {
+        m_searchStatus->setText("No matches. You can still type \"City, Country\" and Save.");
+        return;
+    }
+    m_searchStatus->setText(QString("%1 match(es) — click to select").arg(results.size()));
+    for (int i = 0; i < results.size(); ++i) {
+        const LocationResult &r = results.at(i);
+        auto *item = new QListWidgetItem(
+            QString("%1 (%2, %3)").arg(r.label)
+                .arg(r.latitude, 0, 'f', 3).arg(r.longitude, 0, 'f', 3));
+        item->setData(Qt::UserRole, i);
+        m_resultsList->addItem(item);
+    }
+}
+
+void SettingsDialog::onSearchError(const QString &error)
+{
+    m_searchStatus->setText(QString("Search failed: %1").arg(error));
+}
+
+void SettingsDialog::onResultSelected(QListWidgetItem *item)
+{
+    if (!item)
+        return;
+    const int idx = item->data(Qt::UserRole).toInt();
+    if (idx < 0 || idx >= m_searchResults.size())
+        return;
+    setPending(m_searchResults.at(idx));
+}
+
+void SettingsDialog::setPending(const LocationResult &result)
+{
+    if (!result.valid)
+        return;
+    m_pending = result;
+    m_hasPending = true;
+    m_searchStatus->setText(QString("Selected: %1 — press Save").arg(result.label));
+    m_searchEdit->setText(result.label);
+}
+
+void SettingsDialog::onDetectClicked()
+{
+    m_detectBtn->setEnabled(false);
+    m_searchStatus->setText("Detecting your location...");
+    m_location->detectCurrentLocation();
+}
+
+void SettingsDialog::onDetectFinished(const LocationResult &result)
+{
+    m_detectBtn->setEnabled(true);
+    setPending(result);
+}
+
+void SettingsDialog::onDetectError(const QString &error)
+{
+    m_detectBtn->setEnabled(true);
+    m_searchStatus->setText(QString("Detect failed: %1").arg(error));
 }
 
 void SettingsDialog::populateMethods()
@@ -290,22 +358,31 @@ void SettingsDialog::onPlaySound()
     QString path;
     if (sound.startsWith('/') || sound.startsWith("file://"))
         path = sound;
-    else if (sound.startsWith("qrc"))
+    else if (sound.startsWith("qrc") || sound.startsWith(":/"))
         path = sound;
     else
         path = "qrc:/sounds/" + sound;
 
-    m_player->setSource(QUrl(path));
+    QUrl source;
+    if (path.startsWith("file://") || path.startsWith("qrc:/") || path.startsWith(":/"))
+        source = QUrl(path);
+    else
+        source = QUrl::fromLocalFile(path);
+    m_player->setSource(source);
     m_audio->setVolume(m_volumeSlider->value() / 100.0f);
     m_player->play();
     m_playBtn->setText("■ Stop");
     m_playing = true;
 }
 
-void SettingsDialog::updateCityCountryFromCombo()
+void SettingsDialog::applyManualLocation()
 {
-    QString text = m_locationCombo->currentText().trimmed();
-    int commaPos = text.lastIndexOf(", ");
+    // Offline fallback: user typed "City, Country" without picking a search
+    // result. Coords stay unset -> legacy city/country timings are used.
+    const QString text = m_searchEdit->text().trimmed();
+    if (text.isEmpty())
+        return; // keep previously saved location
+    const int commaPos = text.lastIndexOf(", ");
     if (commaPos > 0) {
         m_settings.city = text.left(commaPos).trimmed();
         m_settings.country = text.mid(commaPos + 2).trimmed();
@@ -313,11 +390,24 @@ void SettingsDialog::updateCityCountryFromCombo()
         m_settings.city = text;
         m_settings.country = text;
     }
+    m_settings.latitude = qQNaN();
+    m_settings.longitude = qQNaN();
+    m_settings.locationLabel = text;
 }
 
 void SettingsDialog::onSave()
 {
-    updateCityCountryFromCombo();
+    if (m_hasPending && m_pending.valid) {
+        // Exact Photon/IP location: saved with coords for precise timings and
+        // offline reuse via the coords-keyed prayer cache.
+        m_settings.city = m_pending.city;
+        m_settings.country = m_pending.country;
+        m_settings.latitude = m_pending.latitude;
+        m_settings.longitude = m_pending.longitude;
+        m_settings.locationLabel = m_pending.label;
+    } else {
+        applyManualLocation();
+    }
     m_settings.method = m_methodCombo->currentData().toInt();
 
     auto *cur = m_soundList->currentItem();
