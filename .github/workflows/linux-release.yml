@@ -54,7 +54,6 @@ jobs:
 
       - name: Build AppImage (uruntime, no libfuse2 runtime dep)
         env:
-          LDAI_UPDATE_INFORMATION: ""
           # Jammy's default /usr/bin/qmake is Qt5; point the Qt plugin at Qt6.
           QMAKE: /usr/bin/qmake6
         run: |
