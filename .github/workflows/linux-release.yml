@@ -55,14 +55,18 @@ jobs:
       - name: Build AppImage (uruntime, no libfuse2 runtime dep)
         env:
           LDAI_UPDATE_INFORMATION: ""
+          # Jammy's default /usr/bin/qmake is Qt5; point the Qt plugin at Qt6.
+          QMAKE: /usr/bin/qmake6
         run: |
           ./linuxdeploy --appdir AppDir --plugin qt --output appimage
           ls -lh Nida-*.AppImage
           ./Nida-*.AppImage --appimage-extract-and-run --version || true
 
       - name: Build DEB + tarball
+        # Explicit generators: the CMake default also includes RPM, whose
+        # toolchain (rpmbuild) is not installed here.
         run: |
-          cmake --build build --target package
+          (cd build && cpack -G DEB && cpack -G TGZ)
           ls -lh build/*.deb build/*.tar.gz || true
 
       - name: Upload artifacts
