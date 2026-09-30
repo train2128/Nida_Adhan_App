@@ -10,6 +10,7 @@
 #include <QMouseEvent>
 #include <QApplication>
 #include <QScreen>
+#include <QWindow>
 #include <QDebug>
 
 MainWidget::MainWidget(StorageService *storage, QWidget *parent)

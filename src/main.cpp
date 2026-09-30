@@ -4,6 +4,7 @@
 #include <QIcon>
 #include <QNetworkInformation>
 #include <QTextStream>
+#include <QtGlobal>
 #include "app/nidaapp.h"
 
 int main(int argc, char *argv[])
@@ -30,7 +31,12 @@ int main(int argc, char *argv[])
     }
 
     // Enable QNetworkInformation reachability backend when available.
+    // loadBackendByFeatures() only exists since Qt 6.3; on older Qt (e.g.
+    // Ubuntu 22.04's Qt 6.2) ApiService::isOnline() already degrades
+    // gracefully when no backend is loaded.
+#if QT_VERSION >= QT_VERSION_CHECK(6, 3, 0)
     QNetworkInformation::loadBackendByFeatures(QNetworkInformation::Feature::Reachability);
+#endif
 
     // Don't quit when the popup widget closes — system-tray app
     app.setQuitOnLastWindowClosed(false);
