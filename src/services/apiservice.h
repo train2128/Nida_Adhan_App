@@ -25,7 +25,11 @@ private slots:
 
 private:
     bool parseTimings(const QByteArray &data, DailyPrayerTimes *out);
+    void sendRequest(const QUrl &url);
     QNetworkAccessManager *m_nam;
+    // Only the newest request's answer is used: an older in-flight reply
+    // (e.g. for the previous city) must not be saved under new settings.
+    int m_requestSeq = 0;
 };
 
 #endif

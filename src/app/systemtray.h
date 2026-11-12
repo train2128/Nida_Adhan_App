@@ -14,12 +14,15 @@ public:
     ~SystemTray() override;
     void setTooltip(const QString &tooltip);
     void setActiveIcon(bool active);
+    void setAdhanPlaying(bool playing); // shows/hides "Stop adhan"
     void show();
+    void showMessage(const QString &title, const QString &message);
 
 signals:
     void clicked();
     void showWidget();
     void quitRequested();
+    void stopAdhanRequested();
 
 private slots:
     void onIconActivated(QSystemTrayIcon::ActivationReason reason);
@@ -31,6 +34,7 @@ private:
     QMenu *m_menu = nullptr;
     QAction *m_nextPrayerAction = nullptr;
     QAction *m_showAction = nullptr;
+    QAction *m_stopAction = nullptr;
     QAction *m_quitAction = nullptr;
 };
 

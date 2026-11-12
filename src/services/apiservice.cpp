@@ -32,10 +32,7 @@ void ApiService::fetchPrayerTimes(const QString &city, const QString &country, i
     q.addQueryItem("method", QString::number(method));
     q.addQueryItem("date", QDate::currentDate().toString("dd-MM-yyyy"));
     url.setQuery(q);
-
-    QNetworkRequest req{url};
-    req.setHeader(QNetworkRequest::UserAgentHeader, "Nida/1.1");
-    m_nam->get(req);
+    sendRequest(url);
 }
 
 void ApiService::fetchPrayerTimesByCoords(double latitude, double longitude, int method)
@@ -47,15 +44,23 @@ void ApiService::fetchPrayerTimesByCoords(double latitude, double longitude, int
     q.addQueryItem("longitude", QString::number(longitude, 'f', 6));
     q.addQueryItem("method", QString::number(method));
     url.setQuery(q);
+    sendRequest(url);
+}
 
+void ApiService::sendRequest(const QUrl &url)
+{
     QNetworkRequest req{url};
     req.setHeader(QNetworkRequest::UserAgentHeader, "Nida/1.1");
-    m_nam->get(req);
+    req.setTransferTimeout(20000);
+    QNetworkReply *reply = m_nam->get(req);
+    reply->setProperty("requestSeq", ++m_requestSeq);
 }
 
 void ApiService::onReplyFinished(QNetworkReply *reply)
 {
     reply->deleteLater();
+    if (reply->property("requestSeq").toInt() != m_requestSeq)
+        return; // superseded by a newer request
     if (reply->error() != QNetworkReply::NoError) {
         emit fetchError(reply->errorString());
         return;

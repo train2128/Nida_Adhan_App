@@ -5,6 +5,8 @@
 #include <QTime>
 #include <QDate>
 #include <QVector>
+#include <QList>
+#include <QPair>
 #include <QtGlobal>
 #include <qmath.h>
 
@@ -40,7 +42,8 @@ struct NidaSettings {
     QString selectedAdhan = "Adhan-Makkah";
     int volume = 80;
     bool startupEnabled = true;
-    bool darkTheme = true;
+    bool darkTheme = true;          // legacy; kept in sync with theme
+    QString theme = QStringLiteral("dark"); // dark | light | system
     QString language = "en";
     // Precise location (Photon search / auto-detect). NaN = unset -> legacy
     // city/country lookup is used instead.
@@ -61,6 +64,10 @@ struct NidaSettings {
         return city + country;
     }
 };
+
+// (method id, display name) in the order shown in Settings.
+QList<QPair<int, QString>> calculationMethods();
+QString calculationMethodName(int method);
 
 QString formatHijriDate(const QString &day, const QString &monthAr, const QString &year);
 

@@ -77,6 +77,25 @@ Download the `.exe` installer and run it — simple install process.
 
 ---
 
+## Testing the adhan
+
+You don't have to wait for a prayer time. With Nida running, start some music or a video and run:
+
+```bash
+Nida --test-adhan
+```
+
+After 30 seconds Nida does exactly what it does at a real prayer time: pauses your media, plays the adhan, shows the popup, and resumes your media when the adhan ends (or when you close the popup).
+
+Options:
+
+- `--delay SECONDS` changes the wait (default 30, max 3600). Example: `Nida --test-adhan --delay 10`
+- `--prayer NAME` picks the prayer: Fajr, Dhuhr, Asr, Maghrib or Isha (default: the next one). If the adhan sound is turned off for that prayer, only the popup is shown, just like a real prayer time.
+
+On Windows, run it from the install folder, e.g. `"C:\Program Files\Nida\Nida.exe" --test-adhan`.
+
+---
+
 ## Feedback & Contributions
 
 If you have any notes, requests, bug reports, or ideas, feel free to open an issue or contact me. All feedback is welcome.

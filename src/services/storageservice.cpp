@@ -22,8 +22,9 @@ StorageService::~StorageService()
 bool StorageService::initialize()
 {
     QString dataDir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
-    QDir().mkpath(dataDir);
-    QString dbPath = dataDir + "/nida.db";
+    if (!QDir().mkpath(dataDir))
+        qWarning() << "Could not create data directory:" << dataDir;
+    QString dbPath = QDir(dataDir).filePath(QStringLiteral("nida.db"));
 
     m_db = QSqlDatabase::addDatabase("QSQLITE");
     m_db.setDatabaseName(dbPath);
@@ -254,6 +255,7 @@ void StorageService::savePrayerTimesForCoords(double lat, double lon, int method
 NidaSettings StorageService::loadSettings()
 {
     NidaSettings s;
+    bool hasTheme = false;
     QSqlQuery query(m_db);
     query.exec("SELECT key, value FROM settings");
     while (query.next()) {
@@ -266,11 +268,16 @@ NidaSettings StorageService::loadSettings()
         else if (key == "volume") s.volume = val.toInt();
         else if (key == "startup_enabled") s.startupEnabled = (val == "true");
         else if (key == "dark_theme") s.darkTheme = (val == "true");
+        else if (key == "theme") { s.theme = val; hasTheme = true; }
         else if (key == "language") s.language = val;
         else if (key == "latitude") s.latitude = val.isEmpty() ? qQNaN() : val.toDouble();
         else if (key == "longitude") s.longitude = val.isEmpty() ? qQNaN() : val.toDouble();
         else if (key == "location_label") s.locationLabel = val;
     }
+    // Older databases only have dark_theme: derive the theme from it.
+    if (!hasTheme || (s.theme != QLatin1String("dark") && s.theme != QLatin1String("light")
+                      && s.theme != QLatin1String("system")))
+        s.theme = s.darkTheme ? QStringLiteral("dark") : QStringLiteral("light");
     return s;
 }
 
@@ -290,6 +297,7 @@ void StorageService::saveSettings(const NidaSettings &settings)
     set("volume", QString::number(settings.volume));
     set("startup_enabled", settings.startupEnabled ? "true" : "false");
     set("dark_theme", settings.darkTheme ? "true" : "false");
+    set("theme", settings.theme);
     set("language", settings.language);
     // NaN serializes as empty -> hasCoords() stays false after reload.
     set("latitude", qIsNaN(settings.latitude) ? QString()

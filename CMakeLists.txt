@@ -14,11 +14,12 @@ find_package(Qt6 REQUIRED COMPONENTS
     Network
     Multimedia
     Sql
+    Svg
 )
 
 if(WIN32)
     add_definitions(-DNIDA_OS_WINDOWS)
-elseif(UNIX)
+elseif(LINUX)
     find_package(Qt6 REQUIRED COMPONENTS DBus)
     add_definitions(-DNIDA_OS_LINUX)
 endif()
@@ -41,6 +42,7 @@ set(SOURCES
     src/ui/prayerwidget.cpp
     src/ui/settingsdialog.cpp
     src/ui/adhannotificationwindow.cpp
+    src/ui/theme.cpp
 )
 
 set(HEADERS
@@ -59,6 +61,7 @@ set(HEADERS
     src/ui/prayerwidget.h
     src/ui/settingsdialog.h
     src/ui/adhannotificationwindow.h
+    src/ui/theme.h
 )
 
 set(UI_FORMS
@@ -71,11 +74,17 @@ set(RESOURCES
 )
 
 if(WIN32)
+    option(NIDA_ENABLE_WIN_ICON "Embed Windows .exe icon" ON)
     list(APPEND SOURCES platform/windows/wmmediacontrol.cpp)
     list(APPEND HEADERS platform/windows/wmmediacontrol.h)
-    list(APPEND SOURCES resources/win/nida.rc)
-    set(CMAKE_RC_FLAGS "${CMAKE_RC_FLAGS} -I${CMAKE_CURRENT_SOURCE_DIR}/resources/win")
-elseif(UNIX)
+    # NOTE: do NOT list resources/win/nida.rc in SOURCES.
+    # CMake's auto windres rule passes all target -I dirs, and MinGW
+    # windres/gcc splits '-I "D:/Personal Files/..."' on the space,
+    # breaking builds in paths with spaces (QtCreator default).
+    # We compile the icon manually below with no -I/-D flags.
+    set(NIDA_WIN_ICON_RC "${CMAKE_CURRENT_SOURCE_DIR}/resources/win/nida.rc")
+    set(NIDA_WIN_ICON_OBJ "${CMAKE_CURRENT_BINARY_DIR}/nida_icon.obj")
+elseif(LINUX)
     list(APPEND SOURCES platform/linux/mpriscontroller.cpp)
     list(APPEND HEADERS platform/linux/mpriscontroller.h)
 endif()
@@ -87,6 +96,28 @@ qt_add_executable(Nida
     ${RESOURCES}
 )
 
+# Space-safe Windows icon: manual windres with no -I/-D (verified to work
+# in "D:/Personal Files/..." with both MinGW Makefiles and Ninja).
+# nida.rc is just: 1 ICON "icon.ico" (no preprocessor needs).
+if(WIN32 AND NIDA_ENABLE_WIN_ICON)
+    if(CMAKE_RC_COMPILER)
+        add_custom_command(
+            OUTPUT "${NIDA_WIN_ICON_OBJ}"
+            COMMAND "${CMAKE_RC_COMPILER}" -O coff
+                    -i "${NIDA_WIN_ICON_RC}"
+                    -o "${NIDA_WIN_ICON_OBJ}"
+            WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/resources/win"
+            DEPENDS "${NIDA_WIN_ICON_RC}"
+                    "${CMAKE_CURRENT_SOURCE_DIR}/resources/win/icon.ico"
+            COMMENT "Embedding Windows icon (space-safe windres)"
+            VERBATIM
+        )
+        target_sources(Nida PRIVATE "${NIDA_WIN_ICON_OBJ}")
+    else()
+        message(WARNING "NIDA_ENABLE_WIN_ICON=ON but no RC compiler found; building without embedded icon")
+    endif()
+endif()
+
 target_include_directories(Nida PRIVATE
     src
     src/app
@@ -97,7 +128,7 @@ target_include_directories(Nida PRIVATE
 
 if(WIN32)
     target_include_directories(Nida PRIVATE platform/windows)
-elseif(UNIX)
+elseif(LINUX)
     target_include_directories(Nida PRIVATE platform/linux)
 endif()
 
@@ -108,11 +139,12 @@ target_link_libraries(Nida PRIVATE
     Qt6::Network
     Qt6::Multimedia
     Qt6::Sql
+    Qt6::Svg
 )
 
 if(WIN32)
-    target_link_libraries(Nida PRIVATE user32 winmm)
-elseif(UNIX)
+    target_link_libraries(Nida PRIVATE user32 winmm ole32)
+elseif(LINUX)
     target_link_libraries(Nida PRIVATE Qt6::DBus)
 endif()
 
@@ -128,6 +160,30 @@ elseif(WIN32)
     )
 endif()
 
+# Copy the Qt DLLs/plugins next to Nida.exe after each build, so the build
+# folder runs on its own (e.g. "Nida.exe --test-adhan" from a terminal), not
+# only when launched from Qt Creator. windeployqt skips files already up to date.
+if(WIN32)
+    option(NIDA_WINDEPLOY_ON_BUILD "Run windeployqt after building" ON)
+    if(NIDA_WINDEPLOY_ON_BUILD)
+        if(TARGET Qt6::windeployqt)
+            set(NIDA_WINDEPLOYQT "$<TARGET_FILE:Qt6::windeployqt>")
+        else()
+            find_program(NIDA_WINDEPLOYQT windeployqt HINTS "${QT6_INSTALL_PREFIX}/bin")
+        endif()
+        if(NIDA_WINDEPLOYQT)
+            add_custom_command(TARGET Nida POST_BUILD
+                COMMAND "${NIDA_WINDEPLOYQT}" --no-translations --verbose 0
+                        "$<TARGET_FILE:Nida>"
+                COMMENT "Deploying Qt runtime next to Nida.exe"
+                VERBATIM
+            )
+        else()
+            message(WARNING "windeployqt not found; the build folder needs Qt on PATH to run")
+        endif()
+    endif()
+endif()
+
 # ── Install rules ──────────────────────────────────────────────────────────
 
 include(GNUInstallDirs)
@@ -136,19 +192,22 @@ install(TARGETS Nida
     RUNTIME DESTINATION bin
 )
 
-install(FILES "${CMAKE_SOURCE_DIR}/packaging/nida.desktop"
-    DESTINATION "${CMAKE_INSTALL_DATADIR}/applications"
-)
+# Linux-only desktop integration (keep Windows installs clean)
+if(UNIX AND NOT APPLE)
+    install(FILES "${CMAKE_SOURCE_DIR}/packaging/nida.desktop"
+        DESTINATION "${CMAKE_INSTALL_DATADIR}/applications"
+    )
 
-install(FILES "${CMAKE_SOURCE_DIR}/packaging/nida.appdata.xml"
-    DESTINATION "${CMAKE_INSTALL_DATADIR}/metainfo"
-    RENAME "io.github.train2128.Nida.metainfo.xml"
-)
+    install(FILES "${CMAKE_SOURCE_DIR}/packaging/nida.appdata.xml"
+        DESTINATION "${CMAKE_INSTALL_DATADIR}/metainfo"
+        RENAME "io.github.train2128.Nida.metainfo.xml"
+    )
 
-install(FILES "${CMAKE_SOURCE_DIR}/resources/icons/icon_colored.png"
-    DESTINATION "${CMAKE_INSTALL_DATADIR}/icons/hicolor/256x256/apps/"
-    RENAME "nida.png"
-)
+    install(FILES "${CMAKE_SOURCE_DIR}/resources/icons/icon_colored.png"
+        DESTINATION "${CMAKE_INSTALL_DATADIR}/icons/hicolor/256x256/apps/"
+        RENAME "nida.png"
+    )
+endif()
 # NOTE: no SVG source exists, so do not install a fake nida.svg.
 # For AppImage builds use: -DCMAKE_INSTALL_PREFIX=/usr and DESTDIR=AppDir.
 
@@ -188,6 +247,10 @@ set(CPACK_RPM_PACKAGE_REQUIRES
 )
 
 # ── Generators ──
-set(CPACK_GENERATOR "TGZ;DEB;RPM")
+if(WIN32)
+    set(CPACK_GENERATOR "NSIS")
+else()
+    set(CPACK_GENERATOR "TGZ;DEB;RPM")
+endif()
 
 include(CPack)
