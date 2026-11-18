@@ -22,7 +22,7 @@ jobs:
             qt6-base-dev qt6-multimedia-dev qt6-base-dev-tools libqt6svg6-dev \
             libqt6sql6-sqlite libgl1-mesa-dev \
             fuse libfuse2 file desktop-file-utils appstream \
-            rpm
+            rpm qt6-wayland
 
       - name: Configure (prefix /usr is required for AppImages)
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr
@@ -55,6 +55,11 @@ jobs:
 
       - name: Build AppImage (uruntime, no libfuse2 runtime dep)
         env:
+          # Jammy's default /usr/bin/qmake is Qt5; point the Qt plugin at Qt6.
+          QMAKE: /usr/bin/qmake6
+          # Bundle the SVG image plugin (icons) and Wayland next to X11.
+          EXTRA_QT_MODULES: svg
+          EXTRA_PLATFORM_PLUGINS: libqwayland-generic.so
           LDAI_UPDATE_INFORMATION: ""
         run: |
           ./linuxdeploy --appdir AppDir --plugin qt --output appimage
