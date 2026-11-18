@@ -13,6 +13,7 @@
 #include <QPushButton>
 #include <QTimer>
 #include <QVBoxLayout>
+#include <QWindow>
 
 namespace {
 QString formatCountdown(qint64 secs)

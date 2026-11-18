@@ -73,7 +73,12 @@ int main(int argc, char *argv[])
     }
 
     // Enable QNetworkInformation reachability backend when available.
+#if QT_VERSION >= QT_VERSION_CHECK(6, 3, 0)
     QNetworkInformation::loadBackendByFeatures(QNetworkInformation::Feature::Reachability);
+#else
+    // Qt 6.2 (Ubuntu 22.04, the release baseline) only has the older name.
+    QNetworkInformation::load(QNetworkInformation::Feature::Reachability);
+#endif
 
     // Don't quit when the popup widget closes — system-tray app
     app.setQuitOnLastWindowClosed(false);
