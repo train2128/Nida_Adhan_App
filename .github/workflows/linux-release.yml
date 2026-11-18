@@ -60,7 +60,6 @@ jobs:
           # Bundle the SVG image plugin (icons) and Wayland next to X11.
           EXTRA_QT_MODULES: svg
           EXTRA_PLATFORM_PLUGINS: libqwayland-generic.so
-          LDAI_UPDATE_INFORMATION: ""
         run: |
           ./linuxdeploy --appdir AppDir --plugin qt --output appimage
           ls -lh Nida-*.AppImage
