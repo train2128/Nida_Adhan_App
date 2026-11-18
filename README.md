@@ -12,25 +12,30 @@
 
 ## Screenshots
 
-| | |
-|---|---|
-| ![Main widget](screenshots/main_window_1.png) | ![Notification](screenshots/main_window_2.png) |
-| ![Settings](screenshots/settings_window.png) | |
+| Main window (dark) | Main window (light) | Adhan popup |
+|:---:|:---:|:---:|
+| ![Main window, dark theme](screenshots/main_dark.png) | ![Main window, light theme](screenshots/main_light.png) | ![Adhan popup](screenshots/adhan_popup.png) |
+
+| Settings: location | Settings: adhan | Settings: general |
+|:---:|:---:|:---:|
+| ![Location settings](screenshots/settings_location.png) | ![Adhan settings](screenshots/settings_adhan.png) | ![General settings](screenshots/settings_general.png) |
 
 ---
 
 ## Features
 
-- **Media pause/resume** — automatically pauses whatever you're playing (browser, Spotify, video player, anything), then resumes after you dismiss the notification
-- **Prayer notification window** — a dedicated popup shows the prayer name, "لا تنسى صلاتك", and a dismiss button to stop the adhan and resume your media
-- **Adhan sound** — plays automatically at prayer time, stops when you press Close
-- **5 bundled adhan sounds** — plus support for custom MP3 files
+- **Media pause/resume** — automatically pauses whatever you're playing (browser, Spotify, video player, anything), then resumes it when the adhan ends or you stop it. Only media that Nida paused is resumed.
+- **Adhan popup** — shows the prayer name in Arabic, "لا تنسَ صلاتك", the adhan's progress, a **Stop adhan** button, and **Close** (hides the popup, the adhan keeps playing)
+- **Live countdown** — the main window shows the next prayer with a live countdown and progress bar; passed prayers are dimmed and the next one is highlighted
+- **Tray icon that tells you the state** — green normally, orange in the last 5 minutes before a prayer, blue while the adhan plays. Stop the adhan from the tray menu too.
+- **Dark, light, or match system theme** — with photos of Masjid al-Haram
+- **5 bundled adhan sounds** — plus your own MP3 files, with a preview button for each
 - **Per-prayer toggle** — enable or disable the adhan for each prayer individually
-- **Offline support** — caches prayer times in SQLite so it works without internet
+- **City search + auto-detect location** — search any city, or detect it from your IP
+- **22 calculation methods** — Muslim World League, Umm Al-Qura, Egyptian, Karachi, ISNA, Diyanet, JAKIM, Tunisia, Morocco, and more
+- **Offline support** — caches prayer times in SQLite, retries automatically when the network comes back, and refreshes at midnight or after the computer wakes up
 - **Arabic Hijri dates** — displayed alongside the Gregorian date
-- **Multiple calculation methods** — Muslim World League, Umm al-Qura, Egyptian, Karachi, etc.
-- **System tray** — hover to see time until next prayer, click to open the widget
-- **Autostart** — enable from Settings → Preferences → Start with system
+- **Autostart** — Settings → General → Start Nida when you sign in
 
 ---
 
@@ -42,38 +47,50 @@
 
 ## Installation
 
+Download the file for your system from the [latest release](https://github.com/train2128/Nida_Adhan_App/releases/latest).
+
+### Windows
+
+Download `Nida-<version>-Setup.exe` and run it. If an older version is installed, the installer updates it and keeps your settings.
+
 ### Linux
 
-| Method | Command |
-|---|---|
-| **AppImage** (any distro) | `chmod +x Nida-*.AppImage && ./Nida-*.AppImage` |
-| **Debian / Ubuntu** | `sudo dpkg -i nida_*.deb && sudo apt install -f` |
-| **Portable tarball** | `tar xzf Nida-*.tar.gz && cd Nida-*/bin/ && ./Nida` |
+| Distro | File | Install |
+|---|---|---|
+| **Any distro** (incl. Arch, openSUSE) | `Nida-<version>-x86_64.AppImage` | `chmod +x Nida-*.AppImage && ./Nida-*.AppImage` |
+| **Debian 12+ / Ubuntu 22.04+ / Mint / Pop!_OS** | `Nida-<version>-Linux.deb` | `sudo apt install ./Nida-*-Linux.deb` |
+| **Fedora** | `Nida-<version>-Linux.rpm` | `sudo dnf install ./Nida-*-Linux.rpm` |
+| **Other (portable)** | `Nida-<version>-Linux.tar.gz` | `tar xzf Nida-*.tar.gz && ./Nida-*/bin/Nida` (needs Qt 6 installed) |
+
+The AppImage bundles everything it needs, so it's the easiest choice if you're not sure. Use `apt install ./file.deb` rather than `dpkg -i`, so the dependencies are installed automatically.
 
 #### Build from source
 
+Requires CMake 3.20+ and Qt 6.2+ (Core, Gui, Widgets, Network, Multimedia, Sql, Svg, DBus).
+
+**Debian / Ubuntu:**
+```bash
+sudo apt install cmake g++ qt6-base-dev qt6-base-dev-tools qt6-multimedia-dev \
+  libqt6svg6-dev libqt6sql6-sqlite
+```
+
 **Fedora:**
 ```bash
-sudo dnf install cmake gcc-c++ qt6-qtbase-devel qt6-qtmultimedia-devel \
-  qt6-qtsql-devel qt6-qtnetwork-devel qt6-qtdbus-devel
+sudo dnf install cmake gcc-c++ qt6-qtbase-devel qt6-qtmultimedia-devel qt6-qtsvg-devel
+```
+
+**Arch / Manjaro:**
+```bash
+sudo pacman -S --needed cmake gcc qt6-base qt6-multimedia qt6-svg
+```
+
+Then build and install:
+```bash
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr
 cmake --build build --parallel
 sudo cmake --install build
 Nida
 ```
-
-**Debian / Ubuntu:**
-```bash
-sudo apt install cmake g++ qt6-base-dev qt6-multimedia-dev \
-  libqt6sql6 libqt6network6 qt6-base-dev-tools
-cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
-cmake --build build --parallel
-./build/Nida
-```
-
-### Windows
-
-Download the `.exe` installer and run it — simple install process.
 
 ---
 

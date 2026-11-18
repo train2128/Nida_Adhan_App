@@ -21,7 +21,8 @@ jobs:
           sudo apt-get install -y cmake g++ \
             qt6-base-dev qt6-multimedia-dev qt6-base-dev-tools libqt6svg6-dev \
             libqt6sql6-sqlite libgl1-mesa-dev \
-            fuse libfuse2 file desktop-file-utils appstream
+            fuse libfuse2 file desktop-file-utils appstream \
+            rpm
 
       - name: Configure (prefix /usr is required for AppImages)
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr
@@ -60,10 +61,17 @@ jobs:
           ls -lh Nida-*.AppImage
           ./Nida-*.AppImage --appimage-extract-and-run --version || true
 
-      - name: Build DEB + tarball
+      - name: Build DEB + RPM + tarball
+        # CPACK_GENERATOR is TGZ;DEB;RPM, so rpmbuild (package "rpm") is needed.
         run: |
           cmake --build build --target package
-          ls -lh build/*.deb build/*.tar.gz || true
+          ls -lh build/*.deb build/*.rpm build/*.tar.gz
+
+      - name: Verify the DEB installs (all Depends resolvable on 22.04)
+        run: |
+          sudo apt-get install -y ./build/*.deb
+          dpkg -s nida | grep -E '^(Version|Depends):'
+          QT_QPA_PLATFORM=offscreen Nida --version
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -72,4 +80,5 @@ jobs:
           path: |
             Nida-*.AppImage
             build/*.deb
+            build/*.rpm
             build/*.tar.gz

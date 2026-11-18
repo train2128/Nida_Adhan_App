@@ -241,19 +241,17 @@ set(CPACK_SET_DESTDIR ON)
 set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Nida Developers")
 set(CPACK_DEBIAN_PACKAGE_SECTION "utils")
 set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
-set(CPACK_DEBIAN_PACKAGE_DEPENDS
-    "libqt6core6 (>= 6.5), libqt6gui6, libqt6widgets6, libqt6network6,"
-    "libqt6multimedia6, libqt6sql6, libqt6dbus6, libc6"
-)
+# SHLIBDEPS already derives the Qt/libc libraries (with the right per-distro
+# names, e.g. libqt6core6t64 on Debian 13). List only runtime plugins it
+# can't see. Must be ONE string: a CMake list gets joined with ", " and
+# produces an invalid "foo,, bar" Depends field.
+set(CPACK_DEBIAN_PACKAGE_DEPENDS "libqt6sql6-sqlite, qt6-svg-plugins")
 
 # ── RPM ──
 set(CPACK_RPM_PACKAGE_RELEASE "1")
 set(CPACK_RPM_PACKAGE_LICENSE "MIT")
 set(CPACK_RPM_PACKAGE_GROUP "Utilities")
-set(CPACK_RPM_PACKAGE_REQUIRES
-    "qt6-qtcore >= 6.5, qt6-qtgui, qt6-qtwidgets, qt6-qtnetwork,"
-    "qt6-qtmultimedia, qt6-qtsql, qt6-qtdbus, glibc"
-)
+set(CPACK_RPM_PACKAGE_REQUIRES "qt6-qtbase >= 6.5, qt6-qtbase-gui, qt6-qtmultimedia, qt6-qtsvg, glibc")
 
 # ── Generators ──
 if(WIN32)
