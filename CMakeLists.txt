@@ -245,7 +245,9 @@ set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
 # names, e.g. libqt6core6t64 on Debian 13). List only runtime plugins it
 # can't see. Must be ONE string: a CMake list gets joined with ", " and
 # produces an invalid "foo,, bar" Depends field.
-set(CPACK_DEBIAN_PACKAGE_DEPENDS "libqt6sql6-sqlite, qt6-svg-plugins")
+# The SVG plugin moved to its own package after Qt 6.2: Ubuntu 22.04 ships
+# it inside libqt6svg6, Debian 12+/Ubuntu 24.04+ in qt6-svg-plugins.
+set(CPACK_DEBIAN_PACKAGE_DEPENDS "libqt6sql6-sqlite, qt6-svg-plugins | libqt6svg6 (<< 6.3)")
 
 # ── RPM ──
 set(CPACK_RPM_PACKAGE_RELEASE "1")

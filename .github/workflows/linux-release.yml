@@ -73,6 +73,7 @@ jobs:
 
       - name: Verify the DEB installs (all Depends resolvable on 22.04)
         run: |
+          echo "SVG plugin owner: $(dpkg -S /usr/lib/x86_64-linux-gnu/qt6/plugins/imageformats/libqsvg.so)"
           sudo apt-get install -y ./build/*.deb
           dpkg -s nida | grep -E '^(Version|Depends):'
           QT_QPA_PLATFORM=offscreen Nida --version
