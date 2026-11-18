@@ -12,17 +12,40 @@
 
 namespace {
 
+// Charcoal "frosted glass" look with an orange accent (dark), and a warm
+// off-white variant (light). Translucent colors layer over the window/photo.
 const ThemeColors kDark = {
-    QColor("#141428"), QColor("#1c1c36"), QColor("#2a2f52"), QColor("#e6e8f0"),
-    QColor("#8a93b0"), QColor("#d4b25c"), QColor("#4fc3f7"), QColor("#123a52"),
-    QColor("#1f5f86"), QColor("#06283a"),
+    QColor("#1c1d20"),            // bg
+    QColor(255, 255, 255, 15),    // card
+    QColor(255, 255, 255, 24),    // line
+    QColor("#f4f4f5"),            // text
+    QColor("#a1a1aa"),            // muted
+    QColor("#f3b562"),            // gold
+    QColor("#ff6b3d"),            // accent
+    QColor(255, 107, 61, 40),     // accentBg
+    QColor(255, 107, 61, 115),    // accentBorder
+    QColor("#ffffff"),            // onAccent
 };
 
 const ThemeColors kLight = {
-    QColor("#f7f8fc"), QColor("#eceff7"), QColor("#d6dae8"), QColor("#1d2033"),
-    QColor("#646c8a"), QColor("#9a7616"), QColor("#0b7fc0"), QColor("#dcefff"),
-    QColor("#9fcdf0"), QColor("#ffffff"),
+    QColor("#f4f4f2"),
+    QColor("#ffffff"),
+    QColor(0, 0, 0, 22),
+    QColor("#18181b"),
+    QColor("#71717a"),
+    QColor("#b8730f"),
+    QColor("#f0592a"),
+    QColor(240, 89, 42, 30),
+    QColor(240, 89, 42, 100),
+    QColor("#ffffff"),
 };
+
+QString css(const QColor &c)
+{
+    if (c.alpha() == 255)
+        return c.name();
+    return QStringLiteral("rgba(%1,%2,%3,%4)").arg(c.red()).arg(c.green()).arg(c.blue()).arg(c.alpha());
+}
 
 // 24x24 stroke paths; COLOR is replaced at render time.
 const QHash<QString, QString> &iconBodies()
@@ -91,11 +114,14 @@ QString styleSheet(bool dark)
         {"@gold", c.gold}, {"@bg", c.bg},
     };
     for (const auto &t : tokens)
-        qss.replace(t.first, t.second.name());
+        qss.replace(t.first, css(t.second));
+    // Input fields: recessed on dark, near-white on light.
+    qss.replace(QStringLiteral("@field"),
+                dark ? QStringLiteral("rgba(0,0,0,71)") : QStringLiteral("#f6f6f4"));
     // Subtle hover wash that works on both backgrounds.
     qss.replace(QStringLiteral("@hover"),
-                dark ? QStringLiteral("rgba(255,255,255,0.06)")
-                     : QStringLiteral("rgba(0,0,0,0.05)"));
+                dark ? QStringLiteral("rgba(255,255,255,15)")
+                     : QStringLiteral("rgba(0,0,0,13)"));
     return qss;
 }
 

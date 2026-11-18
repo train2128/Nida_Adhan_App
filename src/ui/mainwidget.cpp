@@ -2,6 +2,7 @@
 #include "prayerwidget.h"
 #include "storageservice.h"
 #include "theme.h"
+#include "photobackground.h"
 #include <QApplication>
 #include <QDateTime>
 #include <QFrame>
@@ -54,40 +55,57 @@ void MainWidget::setupUi()
 
     auto *container = new QWidget(this);
     container->setObjectName("mainContainer");
-    auto *layout = new QVBoxLayout(container);
-    layout->setSpacing(2);
-    layout->setContentsMargins(14, 14, 14, 12);
+    auto *outer = new QVBoxLayout(container);
+    outer->setContentsMargins(1, 1, 1, 1); // inside the 1px border
+    outer->setSpacing(0);
 
-    // Header: Hijri + Gregorian date, location on the right.
+    // Photo header: Mecca photo fading into the window, with the dates,
+    // location and the next-prayer card layered on top.
+    m_hero = new PhotoBackground(QStringLiteral(":/images/haram_header"),
+                                 PhotoBackground::Mode::Hero);
+    m_hero->setRadius(17);
+    m_hero->setFocus(0.5, 0.42);
+    m_hero->setFixedHeight(232);
+    auto *heroLayout = new QVBoxLayout(m_hero);
+    heroLayout->setContentsMargins(16, 14, 16, 0);
+    heroLayout->setSpacing(0);
+
     auto *header = new QHBoxLayout;
     auto *dates = new QVBoxLayout;
     dates->setSpacing(1);
     m_hijriLabel = new QLabel;
-    m_hijriLabel->setObjectName("hijriDate");
+    m_hijriLabel->setObjectName("heroHijri");
     m_miladiLabel = new QLabel;
-    m_miladiLabel->setObjectName("miladiDate");
+    m_miladiLabel->setObjectName("heroDate");
     dates->addWidget(m_hijriLabel);
     dates->addWidget(m_miladiLabel);
     header->addLayout(dates);
     header->addStretch();
+    auto *pill = new QWidget;
+    pill->setObjectName("locationPill");
+    pill->setAttribute(Qt::WA_StyledBackground);
+    auto *pillLayout = new QHBoxLayout(pill);
+    pillLayout->setContentsMargins(8, 3, 10, 3);
+    pillLayout->setSpacing(4);
     m_locationIcon = new QLabel;
     m_locationLabel = new QLabel;
     m_locationLabel->setObjectName("locationLabel");
-    header->addWidget(m_locationIcon, 0, Qt::AlignTop);
-    header->addWidget(m_locationLabel, 0, Qt::AlignTop);
-    layout->addLayout(header);
-    layout->addSpacing(10);
+    pillLayout->addWidget(m_locationIcon);
+    pillLayout->addWidget(m_locationLabel);
+    header->addWidget(pill, 0, Qt::AlignTop);
+    heroLayout->addLayout(header);
+    heroLayout->addStretch();
 
     // Next-prayer card.
     auto *card = new QWidget;
     card->setObjectName("nextCard");
     card->setAttribute(Qt::WA_StyledBackground);
     auto *cardLayout = new QVBoxLayout(card);
-    cardLayout->setContentsMargins(12, 10, 12, 12);
-    cardLayout->setSpacing(2);
+    cardLayout->setContentsMargins(14, 12, 14, 14);
+    cardLayout->setSpacing(4);
     auto *cardTop = new QHBoxLayout;
     m_nextCaption = new QLabel(QStringLiteral("Next prayer"));
-    m_nextCaption->setObjectName("cardCaption");
+    m_nextCaption->setObjectName("chipAccent");
     m_nextTimeLabel = new QLabel;
     m_nextTimeLabel->setObjectName("cardCaption");
     cardTop->addWidget(m_nextCaption);
@@ -113,10 +131,16 @@ void MainWidget::setupUi()
     m_progress->setFixedHeight(4);
     cardLayout->addLayout(cardTop);
     cardLayout->addLayout(cardMid);
-    cardLayout->addSpacing(8);
+    cardLayout->addSpacing(6);
     cardLayout->addWidget(m_progress);
-    layout->addWidget(card);
-    layout->addSpacing(8);
+    heroLayout->addWidget(card);
+    outer->addWidget(m_hero);
+
+    auto *body = new QWidget;
+    auto *layout = new QVBoxLayout(body);
+    layout->setSpacing(2);
+    layout->setContentsMargins(14, 10, 14, 12);
+    outer->addWidget(body);
 
     // Prayer rows.
     const QList<QPair<QString, QString>> names = {
@@ -177,7 +201,8 @@ void MainWidget::applyTheme()
     const ThemeColors &c = Theme::colors(m_dark);
     for (PrayerWidget *row : m_rows)
         row->setDark(m_dark);
-    m_locationIcon->setPixmap(Theme::pixmap(QStringLiteral("map-pin"), c.muted, 13));
+    m_locationIcon->setPixmap(Theme::pixmap(QStringLiteral("map-pin"), Qt::white, 12));
+    m_hero->setFadeColor(c.bg);
     m_refreshBtn->setIcon(Theme::icon(QStringLiteral("refresh"), c.text, 17));
     m_settingsBtn->setIcon(Theme::icon(QStringLiteral("settings"), c.text, 17));
     updateFooter();

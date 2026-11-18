@@ -41,8 +41,8 @@ jobs:
           DESTDIR="$PWD/AppDir" cmake --install build
           # linuxdeploy expects the desktop file + icon at AppDir root
           cp packaging/nida.desktop AppDir/
-          cp resources/icons/icon_colored.png AppDir/nida.png
-          cp resources/icons/icon_colored.png AppDir/.DirIcon
+          cp resources/icons/nida_icon.png AppDir/nida.png
+          cp resources/icons/nida_icon.png AppDir/.DirIcon
           # metainfo is already installed by CMake under usr/share/metainfo
 
       - name: Fetch linuxdeploy
@@ -68,7 +68,7 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: Nida-1.1.0-jammy
+          name: Nida-${{ github.ref_name }}-jammy
           path: |
             Nida-*.AppImage
             build/*.deb

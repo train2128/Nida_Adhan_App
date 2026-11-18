@@ -1,8 +1,8 @@
 <RCC>
     <qresource prefix="/icons">
-        <file alias="icon_black">icons/icon_black.png</file>
-        <file alias="icon_white">icons/icon_white.png</file>
-        <file alias="icon_colored">icons/icon_colored.png</file>
+        <file alias="nida_icon">icons/nida_icon.png</file>
+        <file alias="nida_icon_soon">icons/nida_icon_soon.png</file>
+        <file alias="nida_icon_playing">icons/nida_icon_playing.png</file>
         <file alias="chevron_dark">icons/chevron_dark.svg</file>
         <file alias="chevron_light">icons/chevron_light.svg</file>
         <file alias="check_dark">icons/check_dark.svg</file>
@@ -14,6 +14,10 @@
         <file alias="Adhan-Madinah">sounds/Adhan-Madinah.mp3</file>
         <file alias="Adhan-Makkah">sounds/Adhan-Makkah.mp3</file>
         <file alias="Naghshbandi">sounds/Naghshbandi.mp3</file>
+    </qresource>
+    <qresource prefix="/images">
+        <file alias="tawaf_night">images/tawaf_night.jpg</file>
+        <file alias="haram_header">images/haram_header.jpg</file>
     </qresource>
     <qresource prefix="/styles">
         <file alias="nida">styles/nida.qss</file>

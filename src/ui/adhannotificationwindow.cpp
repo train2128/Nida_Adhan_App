@@ -1,5 +1,6 @@
 #include "adhannotificationwindow.h"
 #include "theme.h"
+#include "photobackground.h"
 #include <QCursor>
 #include <QGuiApplication>
 #include <QHBoxLayout>
@@ -34,7 +35,7 @@ AdhanNotificationWindow::AdhanNotificationWindow(QWidget *parent)
     setWindowFlags(Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint | Qt::Tool);
     setAttribute(Qt::WA_TranslucentBackground);
     setObjectName("adhanNotificationWindow");
-    setFixedWidth(340);
+    setFixedWidth(360);
     setupUi();
     setDark(true);
 }
@@ -44,15 +45,19 @@ void AdhanNotificationWindow::setupUi()
     auto *root = new QVBoxLayout(this);
     root->setContentsMargins(0, 0, 0, 0);
 
-    auto *container = new QWidget;
+    // Night photo of the Kaaba behind everything, darkened for legibility.
+    auto *container = new PhotoBackground(QStringLiteral(":/images/tawaf_night"),
+                                          PhotoBackground::Mode::Overlay);
     container->setObjectName("notificationContainer");
+    container->setRadius(20);
+    container->setFocus(0.5, 0.36);
     auto *layout = new QVBoxLayout(container);
-    layout->setContentsMargins(22, 22, 22, 18);
+    layout->setContentsMargins(24, 26, 24, 20);
     layout->setSpacing(4);
 
     m_badge = new QLabel;
     m_badge->setObjectName("moonBadge");
-    m_badge->setFixedSize(52, 52);
+    m_badge->setFixedSize(54, 54);
     m_badge->setAlignment(Qt::AlignCenter);
     layout->addWidget(m_badge, 0, Qt::AlignHCenter);
     layout->addSpacing(8);
@@ -131,10 +136,11 @@ void AdhanNotificationWindow::setDark(bool dark)
     m_dark = dark;
     Theme::apply(this, dark);
     const ThemeColors &c = Theme::colors(dark);
-    m_badge->setPixmap(Theme::pixmap(QStringLiteral("moon"), c.gold, 24));
-    m_volumeIcon->setPixmap(Theme::pixmap(QStringLiteral("volume"), c.muted, 15));
+    m_badge->setPixmap(Theme::pixmap(QStringLiteral("moon"), QColor("#f3b562"), 24));
+    // Text and icons sit on the photo, so they stay light in both themes.
+    m_volumeIcon->setPixmap(Theme::pixmap(QStringLiteral("volume"), QColor(255, 255, 255, 170), 15));
     m_stopBtn->setIcon(Theme::icon(QStringLiteral("stop"), c.onAccent, 15));
-    m_closeBtn->setIcon(Theme::icon(QStringLiteral("x"), c.text, 15));
+    m_closeBtn->setIcon(Theme::icon(QStringLiteral("x"), Qt::white, 15));
 }
 
 void AdhanNotificationWindow::showForPrayer(const QString &prayerName, const QTime &prayerTime,

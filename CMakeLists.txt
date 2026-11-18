@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(Nida VERSION 1.1.0 LANGUAGES CXX)
+project(Nida VERSION 1.2.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -43,6 +43,7 @@ set(SOURCES
     src/ui/settingsdialog.cpp
     src/ui/adhannotificationwindow.cpp
     src/ui/theme.cpp
+    src/ui/photobackground.cpp
 )
 
 set(HEADERS
@@ -62,6 +63,7 @@ set(HEADERS
     src/ui/settingsdialog.h
     src/ui/adhannotificationwindow.h
     src/ui/theme.h
+    src/ui/photobackground.h
 )
 
 set(UI_FORMS
@@ -82,7 +84,12 @@ if(WIN32)
     # windres/gcc splits '-I "D:/Personal Files/..."' on the space,
     # breaking builds in paths with spaces (QtCreator default).
     # We compile the icon manually below with no -I/-D flags.
-    set(NIDA_WIN_ICON_RC "${CMAKE_CURRENT_SOURCE_DIR}/resources/win/nida.rc")
+    # nida.rc is generated from nida.rc.in so the exe's version info always
+    # matches project(VERSION).
+    set(NIDA_WIN_ICON_ICO "${CMAKE_CURRENT_SOURCE_DIR}/resources/win/icon.ico")
+    set(NIDA_WIN_ICON_RC "${CMAKE_CURRENT_BINARY_DIR}/nida.rc")
+    configure_file("${CMAKE_CURRENT_SOURCE_DIR}/resources/win/nida.rc.in"
+                   "${NIDA_WIN_ICON_RC}" @ONLY)
     set(NIDA_WIN_ICON_OBJ "${CMAKE_CURRENT_BINARY_DIR}/nida_icon.obj")
 elseif(LINUX)
     list(APPEND SOURCES platform/linux/mpriscontroller.cpp)
@@ -98,7 +105,7 @@ qt_add_executable(Nida
 
 # Space-safe Windows icon: manual windres with no -I/-D (verified to work
 # in "D:/Personal Files/..." with both MinGW Makefiles and Ninja).
-# nida.rc is just: 1 ICON "icon.ico" (no preprocessor needs).
+# nida.rc holds the icon + VERSIONINFO using plain numbers (no preprocessor needs).
 if(WIN32 AND NIDA_ENABLE_WIN_ICON)
     if(CMAKE_RC_COMPILER)
         add_custom_command(
@@ -107,9 +114,8 @@ if(WIN32 AND NIDA_ENABLE_WIN_ICON)
                     -i "${NIDA_WIN_ICON_RC}"
                     -o "${NIDA_WIN_ICON_OBJ}"
             WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/resources/win"
-            DEPENDS "${NIDA_WIN_ICON_RC}"
-                    "${CMAKE_CURRENT_SOURCE_DIR}/resources/win/icon.ico"
-            COMMENT "Embedding Windows icon (space-safe windres)"
+            DEPENDS "${NIDA_WIN_ICON_RC}" "${NIDA_WIN_ICON_ICO}"
+            COMMENT "Embedding Windows icon and version info (space-safe windres)"
             VERBATIM
         )
         target_sources(Nida PRIVATE "${NIDA_WIN_ICON_OBJ}")
@@ -117,6 +123,9 @@ if(WIN32 AND NIDA_ENABLE_WIN_ICON)
         message(WARNING "NIDA_ENABLE_WIN_ICON=ON but no RC compiler found; building without embedded icon")
     endif()
 endif()
+
+# Single source of truth for the version string used in the app.
+target_compile_definitions(Nida PRIVATE NIDA_VERSION="${PROJECT_VERSION}")
 
 target_include_directories(Nida PRIVATE
     src
@@ -203,8 +212,8 @@ if(UNIX AND NOT APPLE)
         RENAME "io.github.train2128.Nida.metainfo.xml"
     )
 
-    install(FILES "${CMAKE_SOURCE_DIR}/resources/icons/icon_colored.png"
-        DESTINATION "${CMAKE_INSTALL_DATADIR}/icons/hicolor/256x256/apps/"
+    install(FILES "${CMAKE_SOURCE_DIR}/resources/icons/nida_icon.png"
+        DESTINATION "${CMAKE_INSTALL_DATADIR}/icons/hicolor/512x512/apps/"
         RENAME "nida.png"
     )
 endif()

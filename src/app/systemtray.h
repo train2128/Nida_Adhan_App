@@ -13,8 +13,10 @@ public:
     explicit SystemTray(QObject *parent = nullptr);
     ~SystemTray() override;
     void setTooltip(const QString &tooltip);
-    void setActiveIcon(bool active);
-    void setAdhanPlaying(bool playing); // shows/hides "Stop adhan"
+    // Tray icon: green normally, orange in the last minutes before a prayer,
+    // blue while the adhan plays. Playing wins over "soon".
+    void setAdhanPlaying(bool playing); // also shows/hides "Stop adhan"
+    void setPrayerSoon(bool soon);
     void show();
     void showMessage(const QString &title, const QString &message);
 
@@ -29,6 +31,7 @@ private slots:
 
 private:
     void setupMenu();
+    void updateIcon();
 
     QSystemTrayIcon *m_trayIcon = nullptr;
     QMenu *m_menu = nullptr;
@@ -36,6 +39,11 @@ private:
     QAction *m_showAction = nullptr;
     QAction *m_stopAction = nullptr;
     QAction *m_quitAction = nullptr;
+    QIcon m_iconNormal;
+    QIcon m_iconSoon;
+    QIcon m_iconPlaying;
+    bool m_playing = false;
+    bool m_soon = false;
 };
 
 #endif

@@ -32,7 +32,6 @@ qrc_*.cpp
 Thumbs.db
 *.res
 *.rc
-!resources/win/nida.rc
 /.qmake.cache
 /.qmake.stash
 

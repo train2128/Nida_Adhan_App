@@ -10,6 +10,7 @@ class QLabel;
 class QPushButton;
 class QProgressBar;
 class QTimer;
+class PhotoBackground;
 
 // Tray popup: date header, next-prayer card with live countdown, the six
 // prayer rows (passed ones dimmed, next one highlighted) and a footer.
@@ -43,6 +44,7 @@ private:
     bool m_hasTimes = false;
     bool m_dark = true;
 
+    PhotoBackground *m_hero;
     QLabel *m_hijriLabel;
     QLabel *m_miladiLabel;
     QLabel *m_locationIcon;

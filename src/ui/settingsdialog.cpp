@@ -362,7 +362,7 @@ void SettingsDialog::setDark(bool dark)
     for (const auto &n : m_navIcons) {
         QIcon icon;
         icon.addPixmap(Theme::pixmap(n.second, c.muted, 17), QIcon::Normal);
-        icon.addPixmap(Theme::pixmap(n.second, c.accent, 17), QIcon::Selected);
+        icon.addPixmap(Theme::pixmap(n.second, c.onAccent, 17), QIcon::Selected);
         n.first->setIcon(icon);
     }
     m_savedIcon->setPixmap(Theme::pixmap(QStringLiteral("map-pin"), c.gold, 16));

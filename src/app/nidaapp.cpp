@@ -229,6 +229,10 @@ void NidaApp::scheduleTestAdhan(int delaySec, const QString &prayer)
                             QStringLiteral("Simulating adhan time for %1 in %2 seconds.")
                                 .arg(who).arg(delaySec));
     }
+    // Show the "prayer soon" (orange) tray icon during the countdown, like
+    // the real last minutes before a prayer.
+    if (m_tray && delaySec > 0)
+        m_tray->setPrayerSoon(true);
     m_testTimer->start(delaySec * 1000);
 }
 
@@ -253,6 +257,11 @@ void NidaApp::onTestAdhanTimeout()
         }
     }
     m_scheduler->announcePrayer(prayer);
+    // Adhan turned off for this prayer: nothing plays, so clear the test's
+    // orange icon right away.
+    if (!m_scheduler->isAdhanPlaying())
+        onPrayerTimesUpdated(m_scheduler->nextPrayerName(),
+                             m_scheduler->secondsUntilNextPrayer());
 }
 
 void NidaApp::refreshPrayerTimes()
@@ -489,7 +498,11 @@ void NidaApp::onAdhanFinished()
 {
     if (m_tray) {
         m_tray->setAdhanPlaying(false);
-        m_tray->setActiveIcon(false);
+        // Back to the icon for the real current state (green, or orange if
+        // the next prayer is within 5 minutes).
+        if (m_scheduler)
+            onPrayerTimesUpdated(m_scheduler->nextPrayerName(),
+                                 m_scheduler->secondsUntilNextPrayer());
     }
     if (m_notificationWindow && m_notificationWindow->isVisible())
         m_notificationWindow->setAdhanFinished();
@@ -501,8 +514,12 @@ void NidaApp::onPrayerTimesUpdated(const QString &name, int secondsUntil)
         return;
     if (name.isEmpty() || secondsUntil <= 0) {
         m_tray->setTooltip(QStringLiteral("Nida - Prayer Times"));
+        m_tray->setPrayerSoon(false);
         return;
     }
+    // Orange tray icon during the last 5 minutes before a prayer (sunrise is
+    // not a prayer, so it doesn't count).
+    m_tray->setPrayerSoon(name != QLatin1String("Sunrise") && secondsUntil <= 5 * 60);
     int h = secondsUntil / 3600;
     int m = (secondsUntil % 3600) / 60;
     QString tip = QString("Next: %1 in %2h %3m").arg(name).arg(h).arg(m);

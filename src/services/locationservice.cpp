@@ -44,7 +44,7 @@ void LocationService::searchLocations(const QString &query, const QString &lang)
     url.setQuery(params);
 
     QNetworkRequest req{url};
-    req.setHeader(QNetworkRequest::UserAgentHeader, "Nida/1.1");
+    req.setHeader(QNetworkRequest::UserAgentHeader, "Nida/" NIDA_VERSION);
     req.setAttribute(QNetworkRequest::RedirectPolicyAttribute,
                      QNetworkRequest::NoLessSafeRedirectPolicy);
     QNetworkReply *reply = m_searchNam->get(req);
@@ -54,7 +54,7 @@ void LocationService::searchLocations(const QString &query, const QString &lang)
 void LocationService::detectCurrentLocation()
 {
     QNetworkRequest req{QUrl(QStringLiteral("https://ipapi.co/json/"))};
-    req.setHeader(QNetworkRequest::UserAgentHeader, "Nida/1.1");
+    req.setHeader(QNetworkRequest::UserAgentHeader, "Nida/" NIDA_VERSION);
     QNetworkReply *reply = m_detectNam->get(req);
     reply->setProperty("detectSource", QStringLiteral("ipapi-co"));
 }
@@ -96,7 +96,7 @@ void LocationService::onDetectReply(QNetworkReply *reply)
         if (source == QLatin1String("ipapi-co")) {
             // Fallback: no-key HTTP endpoint with the same city/country/lat/lon.
             QNetworkRequest req{QUrl(QStringLiteral("http://ip-api.com/json/"))};
-            req.setHeader(QNetworkRequest::UserAgentHeader, "Nida/1.1");
+            req.setHeader(QNetworkRequest::UserAgentHeader, "Nida/" NIDA_VERSION);
             QNetworkReply *fb = m_detectNam->get(req);
             fb->setProperty("detectSource", QStringLiteral("ip-api-com"));
             return;
@@ -108,7 +108,7 @@ void LocationService::onDetectReply(QNetworkReply *reply)
     if (!doc.isObject()) {
         if (source == QLatin1String("ipapi-co")) {
             QNetworkRequest req{QUrl(QStringLiteral("http://ip-api.com/json/"))};
-            req.setHeader(QNetworkRequest::UserAgentHeader, "Nida/1.1");
+            req.setHeader(QNetworkRequest::UserAgentHeader, "Nida/" NIDA_VERSION);
             QNetworkReply *fb = m_detectNam->get(req);
             fb->setProperty("detectSource", QStringLiteral("ip-api-com"));
             return;

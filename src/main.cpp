@@ -14,10 +14,10 @@ int main(int argc, char *argv[])
     QApplication app(argc, argv);
     app.setApplicationName("Nida");
     app.setApplicationDisplayName("Nida - Prayer Times");
-    app.setApplicationVersion("1.1.0");
+    app.setApplicationVersion(QStringLiteral(NIDA_VERSION));
     app.setOrganizationName("Nida");
     app.setOrganizationDomain("github.com/train2128/Nida_Adhan_App");
-    app.setWindowIcon(QIcon(":/icons/icon_colored"));
+    app.setWindowIcon(QIcon(":/icons/nida_icon"));
 
     const QStringList args = app.arguments();
     const bool cliFlag = args.contains("--version") || args.contains("-v")

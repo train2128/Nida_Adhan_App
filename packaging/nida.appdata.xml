@@ -30,6 +30,11 @@
   </provides>
   <content_rating type="oars-1.1" />
   <releases>
+    <release version="1.2.0" date="2026-11-18">
+      <description>
+        <p>New design with Mecca photos, new icons and tray states, reliability fixes, and a --test-adhan command.</p>
+      </description>
+    </release>
     <release version="1.1.0" date="2026-09-30">
       <description>
         <p>Major stability update: fixed offline cache, single-instance IPC, autostart handling, media pause/resume, and reproducible AppImage builds on Ubuntu 22.04.</p>

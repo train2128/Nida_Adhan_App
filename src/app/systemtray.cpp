@@ -6,8 +6,11 @@ SystemTray::SystemTray(QObject *parent)
     : QObject(parent)
     , m_trayIcon(new QSystemTrayIcon(this))
     , m_menu(new QMenu(nullptr))
+    , m_iconNormal(QStringLiteral(":/icons/nida_icon"))
+    , m_iconSoon(QStringLiteral(":/icons/nida_icon_soon"))
+    , m_iconPlaying(QStringLiteral(":/icons/nida_icon_playing"))
 {
-    m_trayIcon->setIcon(QIcon(":/icons/icon_colored"));
+    m_trayIcon->setIcon(m_iconNormal);
     m_trayIcon->setToolTip("Nida - Prayer Times");
 
     setupMenu();
@@ -42,17 +45,26 @@ void SystemTray::setTooltip(const QString &tooltip)
     m_nextPrayerAction->setText(tooltip);
 }
 
-void SystemTray::setActiveIcon(bool active)
-{
-    Q_UNUSED(active);
-    // The colored icon is the normal one (as at startup). Switching to the
-    // black icon after the first adhan made the tray look different forever.
-    m_trayIcon->setIcon(QIcon(":/icons/icon_colored"));
-}
-
 void SystemTray::setAdhanPlaying(bool playing)
 {
+    m_playing = playing;
     m_stopAction->setVisible(playing);
+    updateIcon();
+}
+
+void SystemTray::setPrayerSoon(bool soon)
+{
+    m_soon = soon;
+    updateIcon();
+}
+
+void SystemTray::updateIcon()
+{
+    // Always derived from the current state, so the icon can never get stuck
+    // (the old code switched to a black icon after the adhan and never back).
+    const QIcon &icon = m_playing ? m_iconPlaying : (m_soon ? m_iconSoon : m_iconNormal);
+    if (m_trayIcon->icon().cacheKey() != icon.cacheKey())
+        m_trayIcon->setIcon(icon);
 }
 
 void SystemTray::show()

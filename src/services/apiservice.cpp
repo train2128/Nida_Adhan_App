@@ -50,7 +50,7 @@ void ApiService::fetchPrayerTimesByCoords(double latitude, double longitude, int
 void ApiService::sendRequest(const QUrl &url)
 {
     QNetworkRequest req{url};
-    req.setHeader(QNetworkRequest::UserAgentHeader, "Nida/1.1");
+    req.setHeader(QNetworkRequest::UserAgentHeader, "Nida/" NIDA_VERSION);
     req.setTransferTimeout(20000);
     QNetworkReply *reply = m_nam->get(req);
     reply->setProperty("requestSeq", ++m_requestSeq);

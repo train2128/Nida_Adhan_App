@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="resources/icons/icon_colored.png" width="80">
+  <img src="resources/icons/nida_icon.png" width="80">
 </p>
 
 <h1 align="center">Nida - نداء | Prayer Time App</h1>
@@ -105,3 +105,8 @@ If you have any notes, requests, bug reports, or ideas, feel free to open an iss
 ## License
 
 MIT
+
+### Photo credits
+
+- Adhan popup background: [Masjid al-Haram, Tawaf](https://commons.wikimedia.org/wiki/File:Masjid_al-Haram,_Tawaf_20092012_1130PM_(8008466944).jpg) by Basheer Olakara, [CC BY 2.0](https://creativecommons.org/licenses/by/2.0/), cropped and resized.
+- Main window header: [Masjid al-Haram 2022](https://commons.wikimedia.org/wiki/File:Masjid_al-Haram_2022.jpg), [CC0](https://creativecommons.org/publicdomain/zero/1.0/), cropped and resized.

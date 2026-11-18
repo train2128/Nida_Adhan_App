@@ -3,116 +3,143 @@
 
 QWidget { color: @text; font-size: 13px; }
 QLabel { background: transparent; }
-QToolTip { background: @card; color: @text; border: 1px solid @line; padding: 4px 6px; }
+QToolTip { background: @bg; color: @text; border: 1px solid @line; padding: 4px 8px; border-radius: 6px; }
 
 /* ── Window surfaces ── */
-QWidget#mainContainer, QWidget#notificationContainer {
+QWidget#mainContainer {
     background-color: @bg;
     border: 1px solid @line;
-    border-radius: 14px;
+    border-radius: 18px;
 }
-QWidget#notificationContainer { border: 1px solid @accentBorder; }
 QDialog#settingsDialog { background-color: @bg; }
 
-/* ── Main window ── */
-QLabel#hijriDate { color: @gold; font-size: 14px; font-weight: 600; }
-QLabel#miladiDate, QLabel#locationLabel, QLabel#methodLabel { color: @muted; font-size: 11px; }
-
-QWidget#nextCard { background-color: @card; border-radius: 10px; }
-QLabel#cardCaption { color: @muted; font-size: 11px; }
-QLabel#nextName { font-size: 17px; font-weight: 600; }
-QLabel#nextNameAr { color: @muted; font-size: 14px; }
-QLabel#countdown { color: @accent; font-size: 22px; font-weight: 600; }
-
-QProgressBar#nextProgress, QProgressBar#adhanProgress {
-    background-color: @line;
-    border: none;
-    border-radius: 2px;
+/* ── Main window: photo header (always light text on the photo) ── */
+QLabel#heroHijri { color: #ffffff; font-size: 15px; font-weight: 700; }
+QLabel#heroDate { color: rgba(255,255,255,204); font-size: 11px; }
+QWidget#locationPill {
+    background-color: rgba(0,0,0,97);
+    border: 1px solid rgba(255,255,255,46);
+    border-radius: 11px;
 }
-QProgressBar#nextProgress::chunk { background-color: @accent; border-radius: 2px; }
-QProgressBar#adhanProgress::chunk { background-color: @gold; border-radius: 2px; }
+QLabel#locationLabel { color: #ffffff; font-size: 11px; }
 
-QWidget#prayerRow { border-radius: 8px; border: 1px solid transparent; }
+/* Next-prayer card sits on the photo: dark frosted glass, light text. */
+QWidget#nextCard {
+    background-color: rgba(18,18,20,178);
+    border: 1px solid rgba(255,255,255,38);
+    border-radius: 14px;
+}
+QLabel#chipAccent {
+    background-color: @accent;
+    color: @onAccent;
+    border-radius: 9px;
+    padding: 2px 9px;
+    font-size: 11px;
+    font-weight: 600;
+}
+QWidget#nextCard QLabel#cardCaption { color: rgba(255,255,255,190); font-size: 12px; font-weight: 600; }
+QWidget#nextCard QLabel#nextName { color: #ffffff; font-size: 18px; font-weight: 700; }
+QWidget#nextCard QLabel#nextNameAr { color: rgba(255,255,255,190); font-size: 14px; }
+QWidget#nextCard QLabel#countdown { color: #ffffff; font-size: 26px; font-weight: 700; }
+
+QProgressBar#nextProgress { background-color: rgba(255,255,255,46); border: none; border-radius: 2px; }
+QProgressBar#nextProgress::chunk { background-color: @accent; border-radius: 2px; }
+
+QWidget#prayerRow { border-radius: 10px; border: 1px solid transparent; }
 QWidget#prayerRow[state="next"] { background-color: @accentBg; border: 1px solid @accentBorder; }
-QLabel#prayerName { font-size: 13px; }
+QLabel#prayerName { font-size: 13px; font-weight: 500; }
 QLabel#prayerNameAr { color: @muted; font-size: 12px; }
-QLabel#prayerTime { font-size: 15px; font-weight: 600; }
+QLabel#prayerTime { font-size: 15px; font-weight: 700; }
 QWidget#prayerRow[state="passed"] QLabel { color: @muted; }
-QWidget#prayerRow[state="next"] QLabel#prayerName { font-weight: 600; }
+QWidget#prayerRow[state="next"] QLabel#prayerName { font-weight: 700; }
 QWidget#prayerRow[state="next"] QLabel#prayerNameAr,
 QWidget#prayerRow[state="next"] QLabel#prayerTime { color: @accent; }
 
-QPushButton#adhanToggle { background: transparent; border: none; border-radius: 6px; }
+QPushButton#adhanToggle { background: transparent; border: none; border-radius: 14px; }
 QPushButton#adhanToggle:hover { background-color: @hover; }
 
 QFrame#footerSep { background-color: @line; color: @line; border: none; max-height: 1px; }
+QLabel#methodLabel { color: @muted; font-size: 11px; }
 
 /* ── Buttons ── */
 QPushButton#iconBtn {
-    background: transparent;
+    background-color: @card;
     border: 1px solid @line;
-    border-radius: 8px;
+    border-radius: 16px;
 }
-QPushButton#iconBtn:hover { background-color: @hover; border-color: @accentBorder; }
-QPushButton#iconBtnFlat { background: transparent; border: none; border-radius: 6px; }
+QPushButton#iconBtn:hover { border-color: @accentBorder; background-color: @accentBg; }
+QPushButton#iconBtnFlat { background: transparent; border: none; border-radius: 14px; }
 QPushButton#iconBtnFlat:hover { background-color: @hover; }
 
 QPushButton#primaryBtn {
     background-color: @accent;
     color: @onAccent;
     border: 1px solid @accent;
-    border-radius: 8px;
-    padding: 7px 18px;
+    border-radius: 17px;
+    padding: 8px 20px;
     font-weight: 600;
 }
-QPushButton#primaryBtn:hover { border-color: @text; }
-QPushButton#primaryBtn:pressed { padding-top: 8px; padding-bottom: 6px; }
+QPushButton#primaryBtn:hover { background-color: @accentBorder; }
+QPushButton#primaryBtn:pressed { padding-top: 9px; padding-bottom: 7px; }
 
 QPushButton#secondaryBtn {
-    background: transparent;
+    background-color: @card;
     color: @text;
     border: 1px solid @line;
-    border-radius: 8px;
-    padding: 7px 14px;
+    border-radius: 17px;
+    padding: 8px 16px;
 }
-QPushButton#secondaryBtn:hover { background-color: @hover; border-color: @accentBorder; }
+QPushButton#secondaryBtn:hover { border-color: @accentBorder; background-color: @accentBg; }
 QPushButton#secondaryBtn:disabled { color: @muted; }
 
-/* ── Adhan popup ── */
-QLabel#moonBadge { background-color: @accentBg; border-radius: 26px; }
-QLabel#notifNameAr { font-size: 30px; font-weight: 600; }
-QLabel#notifSubtitle { color: @muted; font-size: 13px; }
-QLabel#notifReminder { color: @gold; font-size: 16px; }
-QLabel#notifSmall { color: @muted; font-size: 11px; }
+/* ── Adhan popup (on the photo: fixed light-on-dark colors) ── */
+QWidget#notificationContainer QLabel { color: #ffffff; }
+QLabel#moonBadge {
+    background-color: rgba(255,255,255,36);
+    border: 1px solid rgba(255,255,255,71);
+    border-radius: 27px;
+}
+QLabel#notifNameAr { font-size: 34px; font-weight: 700; }
+QWidget#notificationContainer QLabel#notifSubtitle { color: rgba(255,255,255,204); font-size: 13px; }
+QWidget#notificationContainer QLabel#notifReminder { color: #f3b562; font-size: 17px; font-weight: 600; }
+QWidget#notificationContainer QLabel#notifSmall { color: rgba(255,255,255,166); font-size: 11px; }
+QProgressBar#adhanProgress { background-color: rgba(255,255,255,51); border: none; border-radius: 2px; }
+QProgressBar#adhanProgress::chunk { background-color: @accent; border-radius: 2px; }
+QWidget#notificationContainer QPushButton#secondaryBtn {
+    color: #ffffff;
+    background-color: rgba(255,255,255,36);
+    border: 1px solid rgba(255,255,255,76);
+}
+QWidget#notificationContainer QPushButton#secondaryBtn:hover { background-color: rgba(255,255,255,61); }
 
 /* ── Settings ── */
-QWidget#sidebar { background-color: @card; }
-QLabel#sidebarTitle { color: @gold; font-size: 15px; font-weight: 600; padding-left: 6px; }
+QWidget#sidebar { background-color: @card; border-right: 1px solid @line; }
+QLabel#sidebarTitle { color: @text; font-size: 16px; font-weight: 700; padding-left: 6px; }
 QListWidget#navList { background: transparent; border: none; outline: none; }
-QListWidget#navList::item { color: @muted; border-radius: 8px; padding: 4px 8px; }
-QListWidget#navList::item:hover:!selected { background-color: @hover; }
-QListWidget#navList::item:selected { background-color: @accentBg; color: @accent; }
+QListWidget#navList::item { color: @muted; border-radius: 17px; padding: 4px 10px; }
+QListWidget#navList::item:hover:!selected { background-color: @hover; color: @text; }
+QListWidget#navList::item:selected { background-color: @accent; color: @onAccent; }
 
-QLabel#pageTitle { font-size: 18px; font-weight: 600; }
-QWidget#section { background-color: @card; border-radius: 10px; }
-QLabel#sectionCaption { color: @muted; font-size: 11px; }
-QLabel#savedLocation { font-size: 14px; }
+QLabel#pageTitle { font-size: 20px; font-weight: 700; }
+QWidget#section { background-color: @card; border: 1px solid @line; border-radius: 14px; }
+QLabel#sectionCaption { color: @muted; font-size: 11px; font-weight: 600; }
+QLabel#savedLocation { font-size: 14px; font-weight: 600; }
 QLabel#hint { color: @muted; font-size: 11px; }
 
 QLineEdit, QComboBox {
-    background-color: @bg;
+    background-color: @field;
     color: @text;
     border: 1px solid @line;
-    border-radius: 8px;
-    padding: 6px 10px;
+    border-radius: 10px;
+    padding: 7px 12px;
     selection-background-color: @accent;
     selection-color: @onAccent;
 }
 QLineEdit:focus, QComboBox:focus { border-color: @accent; }
-QComboBox::drop-down { border: none; width: 24px; }
+QComboBox::drop-down { border: none; width: 26px; }
 QComboBox::down-arrow { image: url(:/icons/chevron_@mode); width: 12px; height: 12px; }
 QComboBox QAbstractItemView {
-    background-color: @card;
+    background-color: @bg;
     color: @text;
     border: 1px solid @line;
     selection-background-color: @accentBg;
@@ -121,23 +148,23 @@ QComboBox QAbstractItemView {
 }
 
 QListWidget#resultsList, QListWidget#soundList {
-    background-color: @bg;
+    background-color: @field;
     border: 1px solid @line;
-    border-radius: 8px;
-    padding: 3px;
+    border-radius: 10px;
+    padding: 4px;
     outline: none;
 }
-QListWidget#resultsList::item, QListWidget#soundList::item { border-radius: 6px; padding: 5px 6px; color: @text; }
+QListWidget#resultsList::item, QListWidget#soundList::item { border-radius: 8px; padding: 5px 6px; color: @text; }
 QListWidget#resultsList::item:hover:!selected, QListWidget#soundList::item:hover:!selected { background-color: @hover; }
 QListWidget#resultsList::item:selected, QListWidget#soundList::item:selected { background-color: @accentBg; color: @text; }
 QWidget#soundRow { background: transparent; }
 
 QCheckBox { spacing: 8px; }
 QCheckBox::indicator {
-    width: 16px; height: 16px;
-    border-radius: 4px;
+    width: 18px; height: 18px;
+    border-radius: 6px;
     border: 1px solid @line;
-    background-color: @bg;
+    background-color: @field;
 }
 QCheckBox::indicator:hover { border-color: @accent; }
 QCheckBox::indicator:checked { background-color: @accent; border-color: @accent; image: url(:/icons/check_@mode); }
@@ -145,10 +172,11 @@ QCheckBox::indicator:checked { background-color: @accent; border-color: @accent;
 QSlider::groove:horizontal { height: 4px; background: @line; border-radius: 2px; }
 QSlider::sub-page:horizontal { background: @accent; border-radius: 2px; }
 QSlider::handle:horizontal {
-    background: @accent;
-    width: 14px; height: 14px;
-    margin: -5px 0;
-    border-radius: 7px;
+    background: #ffffff;
+    border: 3px solid @accent;
+    width: 12px; height: 12px;
+    margin: -7px 0;
+    border-radius: 9px;
 }
 
 QScrollBar:vertical { background: transparent; width: 8px; margin: 2px; }
